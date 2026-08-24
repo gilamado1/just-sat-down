@@ -438,33 +438,36 @@ function draw(t){
   // plaid pattern
   ctx.strokeStyle='#00000022'; ctx.lineWidth=3;
   for(let i=0;i<8;i++){ ctx.beginPath(); ctx.moveTo(cx-W*.28+i*W*.075,cy-30); ctx.lineTo(cx-W*.28+i*W*.075,cy+16); ctx.stroke(); }
-  // HUSBAND
+  // HUSBAND (key-art sprite: blissful or alarmed)
   if(G){
-    const hx=cx, hy=cy-52+Math.sin(G.bob*(G.mode==='relaxing'?2:6))*3;
-    // body
-    ctx.fillStyle='#e8863a'; ctx.beginPath(); ctx.ellipse(hx,hy+18,30,26,0,0,7); ctx.fill();
-    // head
-    ctx.fillStyle='#f2b98a'; ctx.beginPath(); ctx.arc(hx,hy-8,20,0,7); ctx.fill();
-    // hair
-    ctx.fillStyle='#5a3a1e'; ctx.beginPath(); ctx.arc(hx,hy-14,19,Math.PI,0); ctx.fill();
-    // face
-    if(G.mode==='relaxing'){
-      ctx.strokeStyle='#333'; ctx.lineWidth=2.5; ctx.lineCap='round';
-      ctx.beginPath(); ctx.arc(hx-7,hy-8,4,.2,2.9); ctx.stroke(); // happy closed eyes
-      ctx.beginPath(); ctx.arc(hx+7,hy-8,4,.2,2.9); ctx.stroke();
-      ctx.beginPath(); ctx.arc(hx,hy+2,6,.3,2.8); ctx.stroke(); // smile
-      // halo
-      ctx.strokeStyle='#ffe066'; ctx.lineWidth=4; ctx.globalAlpha=.6+Math.sin(t*4)*.3;
-      ctx.beginPath(); ctx.ellipse(hx,hy-42,22,7,0,0,7); ctx.stroke(); ctx.globalAlpha=1;
-      // Zzz
-      ctx.fillStyle='#ffffffcc'; ctx.font='16px Bangers';
-      ctx.fillText('z',hx+30,hy-24); ctx.font='12px Bangers'; ctx.fillText('z',hx+42,hy-36);
-    } else {
-      // alarmed eyes
-      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(hx-7,hy-8,6,0,7); ctx.arc(hx+7,hy-8,6,0,7); ctx.fill();
-      ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(hx-7,hy-7,3,0,7); ctx.arc(hx+7,hy-7,3,0,7); ctx.fill();
-      ctx.strokeStyle='#333'; ctx.lineWidth=2.5;
-      ctx.beginPath(); ctx.arc(hx,hy+6,5,3.4,6); ctx.stroke(); // :o mouth
+    if(!draw.spr){ draw.spr={}; ['sprite_sit_relax','sprite_sit_alert'].forEach(k=>{
+      const im=new Image(); im.src='art/'+k+'.png'; draw.spr[k]=im;}); }
+    const relaxed = G.mode==='relaxing';
+    const img = draw.spr[relaxed?'sprite_sit_relax':'sprite_sit_alert'];
+    if(img&&img.complete&&img.naturalWidth){
+      const bobY=relaxed?Math.sin(G.bob*2)*4:Math.sin(t*14)*3;
+      const sc=Math.min(W*.62/img.width, H*.3/img.height);
+      const sw=img.width*sc, sh=img.height*sc;
+      const sx=cx-sw/2, sy=cy-58-sh+30+bobY;
+      if(relaxed){
+        // holy light rays behind him
+        ctx.save();ctx.translate(cx,sy+sh*.4);
+        for(let i=0;i<8;i++){ctx.rotate(Math.PI/4);ctx.fillStyle='rgba(255,230,140,.08)';
+          ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-30,-260);ctx.lineTo(30,-260);ctx.fill();}
+        ctx.restore();
+        ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(cx,cy+42,sw*.34,12,0,0,7);ctx.fill();
+      }
+      ctx.drawImage(img,sx,sy,sw,sh);
+      if(relaxed){
+        ctx.fillStyle='#ffffffcc'; ctx.font='16px Bangers';
+        ctx.fillText('z',sx+sw+4,sy+26); ctx.font='12px Bangers'; ctx.fillText('z',sx+sw+16,sy+12);
+      } else {
+        ctx.fillStyle='#7ec8ff';
+        const sp=(t*80)%26; ctx.globalAlpha=1-sp/26;
+        ctx.beginPath();ctx.ellipse(sx-8,sy+10+sp,3,5,0,0,7);ctx.fill();
+        ctx.beginPath();ctx.ellipse(sx+sw+6,sy+16+sp,3,5,0,0,7);ctx.fill();
+        ctx.globalAlpha=1;
+      }
     }
   }
   // task progress ring
