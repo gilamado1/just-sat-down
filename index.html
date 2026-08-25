@@ -1,498 +1,856 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>JUST SAT DOWN™ — A Marriage Simulator</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Just Sat Down™ — A Marriage Simulator</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;800&display=swap');
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { height:100%; background:#1a1214; overflow:hidden; font-family:'Nunito',sans-serif; }
-  #wrap { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
-  #stage { position:relative; width:100%; height:100%; max-width:560px; background:#2b1d20; overflow:hidden;
-           box-shadow:0 0 80px rgba(0,0,0,.8); }
-  canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
-  /* HUD */
-  #hud { position:absolute; top:0; left:0; right:0; padding:10px 14px; display:none; z-index:5;
-         pointer-events:none; text-align:center; }
-  .bar-label { font-size:11px; font-weight:800; letter-spacing:1px; color:#ffe9c9; text-shadow:0 2px 0 #000; margin-bottom:2px; }
-  .bar { height:14px; background:#00000088; border:2px solid #000; border-radius:8px; overflow:hidden; margin:0 auto 6px; position:relative; }
-  .bar > div { height:100%; width:0%; border-radius:6px; transition:width .15s; }
-  #relaxFill { background:linear-gradient(90deg,#ffd93d,#6bff8f); }
-  #sighFill  { background:linear-gradient(90deg,#ff9d5c,#ff4d4d); width:0%; }
-  #dayLabel { font-family:'Bangers',cursive; font-size:22px; color:#fff; text-shadow:0 3px 0 #000, 0 0 14px #ff8c00; letter-spacing:2px; }
-  /* Speech bubble */
-  #bubble { position:absolute; left:50%; bottom:26%; transform:translateX(-50%) scale(0); max-width:86%;
-            background:#fff; border:3px solid #000; border-radius:18px; padding:12px 18px; z-index:6;
-            font-family:'Bangers',cursive; font-size:24px; color:#111; text-align:center; line-height:1.15;
-            transition:transform .18s cubic-bezier(.34,1.56,.64,1); box-shadow:0 6px 0 #00000055; }
-  #bubble.show { transform:translateX(-50%) scale(1); }
-  #bubble:after { content:''; position:absolute; bottom:-16px; left:50%; margin-left:-8px;
-                  border:8px solid transparent; border-top-color:#000; }
-  /* Mini-game choice buttons */
-  #choices { position:absolute; left:0; right:0; bottom:6%; display:none; flex-wrap:wrap; gap:10px;
-             justify-content:center; z-index:7; padding:0 20px; }
-  #choices button { font-family:'Bangers',cursive; font-size:20px; letter-spacing:1px; padding:12px 20px;
-             background:#ffd93d; border:3px solid #000; border-radius:14px; box-shadow:0 5px 0 #000;
-             cursor:pointer; color:#111; transition:transform .08s; min-width:120px; }
-  #choices button:active { transform:translateY(4px); box-shadow:0 1px 0 #000; }
-  #choices button.wrong { background:#ff6b6b; animation:shake .3s; }
-  @keyframes shake { 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
-  /* Screens */
-  .screen { position:absolute; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center;
-            justify-content:flex-end; text-align:center; padding:20px; }
-  #titleScreen { background:url('art/title.png') center/cover no-repeat; }
-  #overScreen  { background:url('art/gameover.png') center/cover no-repeat; display:none; }
-  .scrim { position:absolute; inset:0; background:linear-gradient(transparent 30%, rgba(0,0,0,.85)); }
-  .screen .inner { position:relative; z-index:2; width:100%; }
-  h1 { font-family:'Bangers',cursive; font-size:min(15vw,72px); color:#ffd93d; letter-spacing:3px;
-       text-shadow:0 4px 0 #000, 0 0 30px #ff8c0088, 0 8px 0 #00000066; line-height:.95; }
-  .sub { color:#fff; font-weight:800; font-size:15px; text-shadow:0 2px 0 #000; margin:8px 0 4px; }
-  .bigbtn { font-family:'Bangers',cursive; font-size:28px; letter-spacing:2px; background:#ff4d6d; color:#fff;
-       border:4px solid #000; border-radius:18px; padding:14px 40px; box-shadow:0 7px 0 #000; cursor:pointer;
-       margin-top:14px; transition:transform .08s; }
-  .bigbtn:active { transform:translateY(5px); box-shadow:0 2px 0 #000; }
-  #statLine { color:#ffe9c9; font-size:14px; font-weight:800; text-shadow:0 2px 0 #000; margin-top:6px; }
-  #overTitle { font-size:min(12vw,56px); color:#ff4d4d; text-shadow:0 4px 0 #000, 0 0 30px #f0055; }
-  #overQuote { font-family:'Bangers',cursive; color:#fff; font-size:22px; text-shadow:0 3px 0 #000; margin-top:4px; }
-  .tiny { font-size:11px; color:#ffffff99; margin-top:10px; }
-  /* floating +score / damage text */
-  .floaty { position:absolute; font-family:'Bangers',cursive; font-size:26px; z-index:8; pointer-events:none;
-            text-shadow:0 3px 0 #000; animation:floatUp 1s ease-out forwards; }
-  @keyframes floatUp { from{opacity:1; transform:translateY(0)} to{opacity:0; transform:translateY(-70px)} }
+html,body{margin:0;height:100%;background:#0d0a14;overflow:hidden;font-family:system-ui,-apple-system,sans-serif}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+canvas{width:min(100vw,177.7vh);aspect-ratio:16/9;touch-action:none;cursor:pointer;display:block}
 </style>
 </head>
 <body>
-<div id="wrap"><div id="stage">
-  <canvas id="cv"></canvas>
-
-  <div id="hud">
-    <div id="dayLabel">DAY 1</div>
-    <div class="bar-label">😌 RELAX-O-METER™</div>
-    <div class="bar" style="width:70%"><div id="relaxFill"></div></div>
-    <div class="bar-label">😤 SIGH METER</div>
-    <div class="bar" style="width:70%"><div id="sighFill"></div></div>
-  </div>
-
-  <div id="bubble"></div>
-  <div id="choices"></div>
-
-  <div class="screen" id="titleScreen">
-    <div class="scrim"></div>
-    <div class="inner">
-      <h1>JUST SAT<br>DOWN™</h1>
-      <div class="sub">A Marriage Simulator · How long can you enjoy the couch?</div>
-      <button class="bigbtn" id="startBtn">SAT DOWN</button>
-      <div id="statLine"></div>
-      <div class="tiny">Best peace streak: <span id="bestLine">0.0s</span> · tap / space to act</div>
-    </div>
-  </div>
-
-  <div class="screen" id="overScreen">
-    <div class="scrim"></div>
-    <div class="inner">
-      <h1 id="overTitle">MARRIAGE OVER</h1>
-      <div id="overQuote"></div>
-      <div class="sub" id="overStats"></div>
-      <button class="bigbtn" id="retryBtn">TRY AGAIN, CHAMP</button>
-    </div>
-  </div>
-</div></div>
-
+<div id="wrap"><canvas id="c" width="960" height="540"></canvas></div>
 <script>
-// ============================== SETUP ==============================
-const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-const stage = document.getElementById('stage');
-let W=560, H=800;
-function resize(){
-  W = stage.clientWidth; H = stage.clientHeight;
-  cv.width = W*devicePixelRatio; cv.height = H*devicePixelRatio;
-  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
-}
-addEventListener('resize', resize); resize();
+"use strict";
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=960,H=540,TAU=Math.PI*2;
+const R=(a,b)=>a+Math.random()*(b-a);
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const dist=(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
 
-const $ = id => document.getElementById(id);
-const hud=$('hud'), bubble=$('bubble'), choicesEl=$('choices');
-const relaxFill=$('relaxFill'), sighFill=$('sighFill'), dayLabel=$('dayLabel');
-
-// ============================== AUDIO (WebAudio, no files) ==============================
+/* ---------------- audio ---------------- */
 let AC=null;
-function ac(){ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); return AC; }
-function tone(f, dur=.15, type='square', vol=.12, when=0, slide=0){
-  const a=ac(), o=a.createOscillator(), g=a.createGain(), t=a.currentTime+when;
-  o.type=type; o.frequency.setValueAtTime(f,t);
-  if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide), t+dur);
-  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+dur);
-  o.connect(g).connect(a.destination); o.start(t); o.stop(t+dur+.02);
-}
-function noise(dur=.3, vol=.2, when=0){
-  const a=ac(), len=a.sampleRate*dur, buf=a.createBuffer(1,len,a.sampleRate), d=buf.getChannelData(0);
-  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len);
-  const s=a.createBufferSource(); s.buffer=buf;
-  const g=a.createGain(); g.gain.value=vol; s.connect(g).connect(a.destination); s.start(a.currentTime+when);
-}
-const SFX = {
-  sit:    ()=>{ tone(220,.12,'sine',.15); tone(330,.15,'sine',.12,.08); },
-  hon:    ()=>{ tone(880,.09,'square',.2); tone(660,.09,'square',.2,.1); tone(880,.14,'square',.2,.2); },
-  good:   ()=>{ tone(523,.09,'square',.12); tone(659,.09,'square',.12,.08); tone(784,.18,'square',.12,.16); },
-  bad:    ()=>{ tone(200,.2,'sawtooth',.15,0,-120); },
-  sigh:   ()=>{ noise(.7,.12); tone(300,.7,'sine',.06,0,-180); },
-  sitdown:()=>{ noise(.12,.25); tone(90,.15,'sine',.2); },
-  boss:   ()=>{ [0,.2,.4,.65].forEach((t,i)=>tone([196,233,196,155][i],.3,'sawtooth',.14,t)); },
-  win:    ()=>{ [523,659,784,1047].forEach((f,i)=>tone(f,.15,'square',.12,i*.09)); }
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function tone(f0,f1,dur,type,vol,delay){const a=ac();if(!a)return;const t=a.currentTime+(delay||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f0,t);if(f1&&f1!==f0)o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t+dur);g.gain.setValueAtTime(vol||.2,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+.05)}
+function noise(dur,vol,freq,delay){const a=ac();if(!a)return;const t=a.currentTime+(delay||0);const len=Math.max(1,Math.floor(a.sampleRate*dur));const buf=a.createBuffer(1,len,a.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;const s=a.createBufferSource();s.buffer=buf;const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=freq||800;const g=a.createGain();g.gain.setValueAtTime(vol||.2,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);s.connect(f);f.connect(g);g.connect(a.destination);s.start(t)}
+const sfx={
+ sit(){tone(120,45,.28,'sine',.5);noise(.15,.3,250)},
+ ding(){tone(1250,1250,.12,'sine',.25)},
+ pop(){noise(.06,.35,2000)},
+ tap(){tone(650,650,.045,'square',.1)},
+ ring(){for(let i=0;i<4;i++)tone(880,880,.09,'square',.1,i*.19)},
+ sigh(){tone(330,130,.95,'sawtooth',.16);noise(.5,.05,400,.12)},
+ bigsigh(){tone(300,90,1.6,'sawtooth',.2);noise(.9,.07,300,.2)},
+ bark(){noise(.08,.45,900);noise(.08,.4,700,.14)},
+ squeak(){tone(500,1100,.12,'sine',.2);tone(1100,430,.16,'sine',.18,.12)},
+ chime(){[880,1108,1318,1760].forEach((f,i)=>tone(f,f,.5,'sine',.14,i*.09))},
+ sting(){[392,311,262].forEach((f,i)=>tone(f,f*.97,.55,'sawtooth',.14,i*.32))},
+ oof(){tone(190,70,.22,'square',.3)},
+ thump(){tone(90,40,.2,'sine',.4);noise(.12,.25,200)},
+ whir(){tone(90,420,.8,'sawtooth',.18)}
 };
 
-// ============================== GAME DATA ==============================
-// Task types: choice (pick answer, may be trap), tap (tap N times), hold (keep pressing), fetch (wait for bar)
-const TASKS = [
-  { day:1,  text:"Honey? Can you grab the remote?", type:'fetch', label:"FETCH IT", dur:1.6, ok:"Found it. It was in the couch. Again." },
-  { day:1,  text:"Does this smell weird to you?", type:'choice',
-    opts:["Smells fine!","Smells weird!","*sniff*"], answer:2,
-    ok:"Hmm. Okay.", note:"There was no safe answer. There never is." },
-  { day:2,  text:"Hold this level. PERFECT. Don't move.", type:'hold', label:"HOLD STEADY", dur:2.5,
-    ok:"A little left— okay it's fine. You can go." },
-  { day:2,  text:"Can you reach the thing? The THING.", type:'choice',
-    opts:["The remote?","The scissors?","The... thing?"], answer:-1, alwaysWrong:true,
-    ok:"No, not that. Never mind, I got it.", note:"It was never knowable." },
-  { day:3,  text:"KILL IT. KILL IT!!! 🕷", type:'tap', label:"SWAT!", taps:8,
-    ok:"...that was a piece of lint. Anyway. Thank you." },
-  { day:3,  text:"Which one do you like better? 1 or 2?", type:'choice',
-    opts:["1","2","You, obviously"], answer:2,
-    ok:"Hmm. Okay.", note:"Flattery: the only correct answer." },
-  { day:4,  text:"Do I look tired to you?", type:'choice',
-    opts:["No! Radiant.","A little?","..."], answer:-1, alwaysWrong:true, instant:true,
-    ok:"WOW. Okay.", note:"This question has no survival path." },
-  { day:4,  text:"My phone is charging. Bring it. It's urgent.", type:'fetch', label:"FIND THE PHONE", dur:2.0,
-    ok:"Thanks. Oh — it's at 4%. Whatever." },
-  { day:5,  text:"Listen to this story. The WHOLE story.", type:'hold', label:"PRETEND TO LISTEN", dur:3.0,
-    ok:"...and THAT'S why Karen got fired. Can you believe it?" },
-  { day:5,  text:"Can you move the couch 2 inches left?", type:'tap', label:"LIFT!", taps:10,
-    ok:"No, right. RIGHT. ...okay back. Perfect. Thanks babe." },
-  { day:6,  text:"Taste this. Is it too salty? Be honest.", type:'choice',
-    opts:["Perfect!","Too salty","Needs salt"], answer:-1, alwaysWrong:true,
-    ok:"You have no palate.", note:"'Be honest' was a trap. It's always a trap." },
-  { day:6,  text:"The Wi-Fi is down. FIX THE INTERNET.", type:'fetch', label:"RESTART ROUTER", dur:2.2,
-    ok:"Oh it's back. It came back on its own." },
-  { day:7,  text:"Where do you want to eat? Don't say 'I don't care'.", type:'choice',
-    opts:["I don't care","Wherever you want","Tacos?"], answer:3,
-    ok:"No, not tacos. Ugh, forget it.", note:"You said tacos. It was wrong." },
-  { day:8,  text:"Hold the baby. He JUST fell asleep.", type:'hold', label:"DON'T. BREATHE.", dur:3.5,
-    ok:"*instantly wakes up* ...I'll take him." },
-  { day:9,  text:"Does this outfit make me look... say it.", type:'choice',
-    opts:["Gorgeous","Comfortable!","It's great!"], answer:1,
-    ok:"'Comfortable.' COMFORTABLE?!", note:"There were 3 options and 0 correct ones." },
-  { day:10, text:"Assemble this furniture. Instructions are a suggestion.", type:'tap', label:"BUILD!", taps:14,
-    ok:"There's one screw left over. That's normal. Right?" },
+/* ---------------- data ---------------- */
+const TASKDEFS={
+ phone:{prep:'charger',line:'Honey? Your phone is ringing. In the other room. Again.',base:5},
+ spider:{prep:'lint',line:'Honey. Do you see that. On the window. I will NOT go near it.',base:7},
+ thermo:{prep:'thermo',line:'It is 61 degrees in this house. I measured.',base:6},
+ lamp:{prep:null,line:'Hold this lamp. Perfect. Don\u2019t move.',base:5},
+ trap:{prep:null,line:'Honey, question. Do I look tired?',base:4.5},
+ remote:{prep:'remote',line:'The remote is under a cushion. Somewhere. You know where.',base:6},
+ dog:{prep:'bowl',line:'BARNABY HAS THE SHOE. THE GOOD SHOE. KILL HIM. METAPHORICALLY.',base:5},
+ chips:{prep:'chips',line:'I bought two kinds of chips. Pick. Now. Which do you like better?',base:5},
+ smell:{prep:null,line:'Does this smell weird to you? No pressure. Be honest.',base:6}
+};
+const TASK_TYPES=Object.keys(TASKDEFS);
+const HOTSPOTS=[
+ {id:'charger',x:155,y:288,name:'Phone charger'},
+ {id:'chips',x:235,y:260,name:'Chips cabinet'},
+ {id:'bowl',x:95,y:445,name:'Dog bowl'},
+ {id:'thermo',x:335,y:215,name:'Thermostat'},
+ {id:'remote',x:770,y:295,name:'Remote spot'},
+ {id:'furn',x:890,y:225,name:'Flat-pack furniture'}
+];
+const RUMOURS={
+ charger:'You hear a phone cable rattling around the kitchen.',
+ lint:'There is a suspicious lint on the window.',
+ thermo:'The thermostat is glowing. Aggressively.',
+ remote:'The remote is in the wrong spot. You KNOW it.',
+ bowl:'The dog is staring at the bowl. Judgementally.',
+ chips:'There is exactly one bag of chips in this house.',
+ furn:'The flat-pack furniture is looking at you.'
+};
+const UPGRADES=[
+ {id:'cupholder',name:'Cup Holder',desc:'Start each day with +1 "I Just Sat Down" shield',cost:40,max:2},
+ {id:'holster',name:'Remote Holster',desc:'Remote hunts resolve themselves. Finally.',cost:60,max:1},
+ {id:'thermo',name:'Smart Thermostat',desc:'The comfy zone is twice as wide',cost:40,max:1},
+ {id:'zapper',name:'Bug Zapper',desc:'One-tap spider justice',cost:50,max:1},
+ {id:'eject',name:'Couch Ejector Seat',desc:'Once/day: blast EVERY request away (+10 sigh)',cost:80,max:1}
 ];
 
-const SIGH_LINES = ["*deep sigh*","HOOOOON-ey?","BAAAABE.","Oh, never mind...","*THE SIGH*"];
-const OVER_QUOTES = [
-  "You never really sat down. You just hovered.",
-  "The couch remembers you fondly.",
-  "She needed something. It could wait. It never waits.",
-  "In the end, the lint swatted YOU."
-];
+/* ---------------- state ---------------- */
+const G={
+ mode:'title', t:0, day:1,
+ peaceOfDay:0, totalPeace:0, pp:0, strikes:0, sigh:0, combo:0,
+ shield:0, ejectLeft:0,
+ prepT:0, prepped:{}, todayPool:[], rumours:[],
+ husband:{x:70,y:380,vx:0,vy:0,stop:0,seen:false,squeaked:{}},
+ dashT:0, drag:false, dragPos:null,
+ sitT:0, strikeT:0,
+ relaxT:0, spawnT:0, tasks:[], floats:[],
+ dayPrevented:0, dayResolved:0,
+ line:null,
+ best:+(localStorage.getItem('jsd_best')||0),
+ titleArt:null
+};
+const U={cupholder:0,holster:0,thermo:0,zapper:0,eject:0};
+let btns=[];
 
-// ============================== STATE ==============================
-let G = null;
-function newGame(){
-  return {
-    mode:'idle',        // idle | relaxing | calling | task | boss | over
-    day:1, taskIdx:0,
-    relax:0, relaxMax:100,
-    sigh:0, sighMax:100,
-    peaceTotal:0, peaceStreak:0, bestStreak: parseFloat(localStorage.jsd_best||"0"),
-    tasksToday:0, tasksNeeded:2,
-    callTimer:0, callDelay:4.0,
-    task:null, taskProg:0, taskTime:0,
-    husband:{x:.5, y:.72, vx:0, vy:0, onCouch:true, tx:.5, ty:.72},
-    wifePos:0, // 0 offscreen right, 1 in room
-    bob:0, shake:0,
-  };
+function float(x,y,text,color){G.floats.push({x,y,text,t:1.6,color:color||'#fff'})}
+function showLine(text){G.line={text,t:2.8}}
+function updateBest(){if(G.totalPeace>G.best){G.best=G.totalPeace;localStorage.setItem('jsd_best',Math.floor(G.best))}}
+
+/* ---------------- flow ---------------- */
+function startGame(){G.day=1;G.totalPeace=0;G.pp=0;G.strikes=0;startDay()}
+function startDay(){
+ G.mode='prep';G.prepT=15;G.peaceOfDay=0;G.sigh=0;G.combo=0;
+ G.shield=1+U.cupholder;G.ejectLeft=U.eject?1:0;
+ G.prepped={};G.dayPrevented=0;G.dayResolved=0;G.tasks=[];G.floats=[];G.line=null;
+ const n=Math.min(TASK_TYPES.length,4+G.day);
+ G.todayPool=shuffle(TASK_TYPES.slice()).slice(0,n);
+ G.rumours=[];
+ for(const t of G.todayPool){const p=TASKDEFS[t].prep;if(p&&G.rumours.length<3)G.rumours.push(p)}
+ if(Math.random()<.45)G.rumours.push('furn');
+ G.rumours=shuffle(G.rumours).slice(0,3);
+}
+function startDash(){G.mode='dash';G.dashT=0;G.husband={x:70,y:380,vx:0,vy:0,stop:0,seen:false,squeaked:{}};G.dragPos=null;showLine('GET TO THE COUCH')}
+function startRelax(){G.mode='relax';G.relaxT=Math.max(40,65-G.day*2);G.spawnT=1.2;G.tasks=[];G.sigh=Math.min(G.sigh,50);showLine('You sat down. It is glorious. It will not last.')}
+function endDay(){
+ G.mode='dayend';G.tasks=[];updateBest();sfx.chime();
+}
+function rankFor(p){if(p<15)return'COUCH POTATO (AT RISK)';if(p<30)return'DOMESTIC PEASANT';if(p<45)return'CERTIFIED CHAIR GUARDIAN';if(p<59)return'DOMESTIC ORACLE';return'NIRVANA ACHIEVED'}
+function doStrike(){
+ G.strikes++;G.sigh=0;G.combo=0;G.tasks=[];
+ if(G.strikes>=3){G.mode='talk';updateBest();sfx.sting()}
+ else{G.mode='strike';G.strikeT=2.6;G.relaxT=Math.max(5,G.relaxT-5);sfx.bigsigh()}
 }
 
-// ============================== INPUT ==============================
-let pressing=false, tapBursts=0;
-function pressStart(){ pressing=true; if(G&&G.mode==='task'&&G.task.type==='tap'){ tapBursts++; SFX.sitdown(); } }
-function pressEnd(){ pressing=false; }
-stage.addEventListener('pointerdown', e=>{ if(e.target.tagName!=='BUTTON') pressStart(); });
-stage.addEventListener('pointerup', pressEnd);
-stage.addEventListener('pointercancel', pressEnd);
-addEventListener('keydown', e=>{ if(e.code==='Space'&&!e.repeat){ e.preventDefault(); pressStart(); } });
-addEventListener('keyup',   e=>{ if(e.code==='Space') pressEnd(); });
-
-// ============================== FLOW ==============================
-function showBubble(txt, ms){
-  bubble.textContent = txt; bubble.classList.add('show');
-  clearTimeout(bubble._t);
-  if(ms) bubble._t = setTimeout(()=>bubble.classList.remove('show'), ms);
+/* ---------------- tasks ---------------- */
+function spawnTask(){
+ let type=G.todayPool.length?G.todayPool.shift():pick(TASK_TYPES);
+ const def=TASKDEFS[type];
+ const scale=Math.max(.55,1-G.day*.05);
+ const card=G.tasks.length===0?0:1;
+ let s={};
+ if(type==='phone'){s={drag:false,startX:0,shake:0}}
+ if(type==='spider'){s={x:35,y:45,need:U.zapper?1:2,hits:0}}
+ if(type==='thermo'){s={a:0,speed:2.1+G.day*.14,zoneC:R(0,TAU),zoneW:U.thermo?1.9:.95}}
+ if(type==='lamp'){s={w:0,holding:false,timer:4}}
+ if(type==='trap'){s={}}
+ if(type==='remote'){s={taps:0,need:8,pop:0}}
+ if(type==='dog'){s={x:25,speed:52+G.day*3,hits:0,need:3}}
+ if(type==='chips'){s={}}
+ if(type==='smell'){s={pos:0,dir:1,speed:70+G.day*5}}
+ const t={type,card,x:card===0?110:550,y:185,t:def.base*scale,max:def.base*scale,def,s};
+ G.tasks.push(t);showLine(def.line);
+ if(type==='phone')sfx.ring();
+ if(type==='dog')sfx.bark();
+ if(type==='thermo')sfx.ding();
+ if(type==='remote'&&U.holster){float(t.x+150,t.y+60,'Holster engaged...','#8fd3ff');setTimeout(()=>{if(t===G.tasks.find(x=>x===t))resolveTask(t,'Found it in the holster. Of course.')},900)}
 }
-function hideBubble(){ bubble.classList.remove('show'); }
-
-function floaty(txt, color){
-  const el=document.createElement('div'); el.className='floaty'; el.textContent=txt; el.style.color=color;
-  el.style.left=(30+Math.random()*40)+'%'; el.style.top='40%';
-  stage.appendChild(el); setTimeout(()=>el.remove(), 1000);
+function removeTask(t){const i=G.tasks.indexOf(t);if(i>=0)G.tasks.splice(i,1)}
+function resolveTask(t,msg){
+ const bonus=10*Math.min(G.combo+1,4);
+ G.pp+=bonus;G.combo++;G.dayResolved++;
+ sfx.ding();float(t.x+150,t.y+45,(msg||'Resolved ')+(' +'+bonus),'#7dff9b');
+ removeTask(t);
 }
-
-function startGame(){
-  G = newGame();
-  $('titleScreen').style.display='none';
-  $('overScreen').style.display='none';
-  hud.style.display='block';
-  ac(); // unlock audio
-  SFX.sit();
-  startRelax();
+function failTask(t,msg){
+ G.combo=0;G.sigh=Math.min(100,G.sigh+25);
+ sfx.sigh();float(t.x+150,t.y+45,msg||'\u2026','#ff6b8a');
+ removeTask(t);
 }
-
-function startRelax(){
-  G.mode='relaxing';
-  G.tasksNeeded = 2 + Math.floor(G.day/3);
-  if(G.tasksToday === undefined) G.tasksToday = 0;
-  G.callDelay = Math.max(1.2, 4.5 - G.day*0.28);
-  G.callTimer = G.callDelay;
-  hideBubble(); choicesEl.style.display='none';
-  dayLabel.textContent = 'DAY '+G.day;
-  SFX.sitdown();
+function useShield(){
+ if(G.shield<=0||!G.tasks.length)return;
+ G.shield--;sfx.pop();
+ const t=G.tasks[0];
+ float(t.x+150,t.y+60,'"I LITERALLY JUST SAT DOWN"','#ffd23e');
+ removeTask(t);
 }
-
-function wifeCalls(){
-  G.mode='calling';
-  SFX.hon();
-  G.shake = 8;
-  const t = TASKS[G.taskIdx % TASKS.length];
-  G.task = t; G.taskIdx++;
-  showBubble(t.text);
-  setTimeout(showTask, 1400);
+function useEject(){
+ if(G.ejectLeft<=0||!G.tasks.length)return;
+ G.ejectLeft--;G.sigh=Math.min(100,G.sigh+10);sfx.whir();
+ for(const t of G.tasks.slice())float(t.x+150,t.y+60,'EJECTED','#8fd3ff');
+ G.tasks=[];G.combo=0;
 }
-
-function showTask(){
-  if(!G || G.mode!=='calling') return;
-  G.mode='task'; G.taskProg=0; G.taskTime=0; tapBursts=0;
-  const t=G.task;
-  choicesEl.innerHTML=''; choicesEl.style.display='flex';
-  if(t.type==='choice'){
-    const order=[...t.opts.keys()].sort(()=>Math.random()-.5);
-    order.forEach(i=>{
-      const b=document.createElement('button'); b.textContent=t.opts[i];
-      b.onclick=()=>answer(i,b); choicesEl.appendChild(b);
-    });
-  } else {
-    const b=document.createElement('button'); b.textContent=t.label;
-    b.onpointerdown=e=>{ e.stopPropagation(); pressStart(); };
-    b.onpointerup=e=>{ e.stopPropagation(); pressEnd(); };
-    choicesEl.appendChild(b);
-    if(t.type==='fetch') showBubble(t.label, 1200);
-  }
+function inCard(t,p){return p.x>=t.x&&p.x<=t.x+300&&p.y>=t.y&&p.y<=t.y+215}
+function taskDown(t,p){
+ const lx=p.x-t.x,ly=p.y-t.y,s=t.s;
+ if(t.type==='phone'){if(dist(lx,ly,150,95)<48){s.drag=true;s.startX=p.x}}
+ else if(t.type==='spider'){if(dist(lx,ly,s.x,s.y)<28){s.hits++;sfx.tap();if(s.hits>=s.need)resolveTask(t,'Swatted. It was a spider. You screamed a little.')}else sfx.tap()}
+ else if(t.type==='thermo'){
+   if(dist(lx,ly,150,95)<60){
+     const d=((s.a-s.zoneC)%TAU+TAU*1.5)%TAU-Math.PI;
+     if(Math.abs(d)<s.zoneW/2)resolveTask(t,'Locked at 72. She nods, once.');
+     else{G.sigh=Math.min(100,G.sigh+5);sfx.oof();float(t.x+150,t.y+60,'BZZT. Wrong temp.','#ff6b8a')}
+   }
+ }
+ else if(t.type==='lamp'){s.holding=true}
+ else if(t.type==='trap'){
+   if(lx>80&&lx<175&&ly>135&&ly<175||lx>185&&lx<280&&ly>135&&ly<175){
+     G.sigh=Math.min(100,G.sigh+20);sfx.sigh();
+     float(t.x+150,t.y+60,'You KNEW it.','#ff6b8a');removeTask(t);
+   }
+ }
+ else if(t.type==='remote'){if(lx>80&&lx<220&&ly>85&&ly<160){s.taps++;sfx.tap();s.pop=.2;if(s.taps>=s.need)resolveTask(t,'Found it. Under the third cushion. Again.')}}
+ else if(t.type==='dog'){if(dist(lx,ly,s.x,110)<34){s.hits++;sfx.bark();s.pop=.2;if(s.hits>=s.need)resolveTask(t,'Shoe recovered. Barnaby: 0, You: 1.')}}
+ else if(t.type==='chips'){
+   if(dist(lx,ly,90,95)<50||dist(lx,ly,210,95)<50){G.sigh=Math.min(100,G.sigh+8);sfx.pop();resolveTask(t,'\u2026I was hoping for "you".')}
+ }
+ else if(t.type==='smell'){
+   if(lx>100&&lx<200&&ly>150&&ly<190){
+     if(s.pos>90&&s.pos<130)resolveTask(t,'You sniffed with authority.');
+     else{G.sigh=Math.min(100,G.sigh+5);sfx.oof();float(t.x+150,t.y+60,'\u201c\u2026is that the freezer?\u201d','#ff6b8a')}
+   }
+ }
 }
-
-function answer(i, btn){
-  const t=G.task;
-  choicesEl.querySelectorAll('button').forEach(b=>b.disabled=true);
-  if(t.answer===i){ // correct (rare)
-    taskDone(true);
-  } else {
-    btn.classList.add('wrong');
-    SFX.bad();
-    if(t.instant){ gameOver("Do I look tired?"); return; }
-    addSigh(30);
-    floaty("WRONG","#ff4d4d");
-    showBubble(t.ok, 1800);
-    setTimeout(()=>taskDone(false), 1200);
-  }
+function taskUp(t){if(t.type==='phone')t.s.drag=false;if(t.type==='lamp')t.s.holding=false}
+function taskMove(t,p){
+ const s=t.s;
+ if(t.type==='phone'&&s.drag&&s.startX-p.x>120)resolveTask(t,'Swiped across the room. Efficient.');
 }
-
-function taskDone(success){
-  hideBubble(); choicesEl.style.display='none';
-  G.tasksToday++;
-  if(success){ G.peaceStreak += 3; floaty("+3s PEACE","#6bff8f"); SFX.good(); }
-  else { addSigh(15); G.peaceStreak = Math.max(0,G.peaceStreak-2); }
-  if(G.tasksToday >= G.tasksNeeded){
-    // day complete -> bonus relax
-    G.relax = Math.min(G.relaxMax, G.relax+25);
-    floaty("DAY SURVIVED","#ffd93d"); SFX.win();
-    G.day++;
-    G.tasksToday = 0;
-    setTimeout(startRelax, 900);
-    G.mode='idle';
-  } else {
-    startRelax();
-  }
-  if(G.peaceStreak > G.bestStreak){ G.bestStreak=G.peaceStreak; localStorage.jsd_best=G.bestStreak; }
+function updateTask(t,dt){
+ const s=t.s;
+ if(t.type==='spider'){
+   const dx=270-s.x,dy=175-s.y,L=Math.hypot(dx,dy);s.x+=dx/L*32*dt;s.y+=dy/L*32*dt;
+   if(dist(s.x,s.y,270,175)<10)failTask(t,'The lint was real. It was a spider.');
+ }
+ else if(t.type==='thermo'){s.a=(s.a+s.speed*dt)%TAU}
+ else if(t.type==='lamp'){
+   s.timer-=dt;
+   if(s.holding)s.w*=Math.pow(.02,dt);
+   else s.w+=(Math.sin(G.t*4.7)+Math.sin(G.t*2.3))*0.28*dt;
+   if(Math.abs(s.w)>0.7)failTask(t,'CLATTER. The lamp. The good lamp.');
+   else if(s.timer<=0)resolveTask(t,'\u201cDon\u2019t put it down.\u201d \u201cI will.\u201d \u201c\u2026Fine.\u201d');
+ }
+ else if(t.type==='remote'){s.pop=Math.max(0,s.pop-dt)}
+ else if(t.type==='dog'){s.x+=s.speed*dt;s.pop=Math.max(0,(s.pop||0)-dt);if(s.x>292)failTask(t,'The good shoe is gone. The hallway smells of victory.')}
+ else if(t.type==='smell'){s.pos+=s.dir*s.speed*dt;if(s.pos>220){s.pos=220;s.dir=-1}if(s.pos<0){s.pos=0;s.dir=1}}
+ t.t-=dt;
+ if(t.t<=0){
+   const fails={phone:'She went to get her own phone. It was RIGHT THERE.',spider:'',thermo:'She put on a sweater. A sweater.',lamp:'',trap:'Silence. The worst kind.',remote:'It was in her hand. It was in her hand the whole time.',dog:'',chips:'You didn\u2019t answer. The silence was an answer.',smell:''};
+   failTask(t,fails[t.type]||'\u2026');
+ }
 }
 
-function addSigh(n){
-  G.sigh = Math.min(G.sighMax, G.sigh+n);
-  SFX.sigh();
-  if(G.sigh>=G.sighMax) gameOver("Fine. I'll do it myself.");
-}
-
-function gameOver(reason){
-  if(!G || G.mode==='over') return;
-  G.mode='over';
-  SFX.boss();
-  hud.style.display='none'; hideBubble(); choicesEl.style.display='none';
-  $('overTitle').textContent = "WE NEED TO TALK";
-  $('overQuote').textContent = '"'+reason+'"';
-  $('overStats').textContent = `Survived ${G.day-1} day(s) · Total peace: ${G.peaceTotal.toFixed(1)}s · Best streak: ${G.bestStreak.toFixed(1)}s`;
-  $('overScreen').style.display='flex';
-}
-
-// ============================== UPDATE ==============================
-let last=performance.now();
-function loop(now){
-  const dt=Math.min(.05,(now-last)/1000); last=now;
-  if(G) update(dt);
-  draw(now/1000);
-  requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
-
+/* ---------------- update ---------------- */
 function update(dt){
-  G.bob += dt;
-  if(G.shake>0) G.shake=Math.max(0,G.shake-dt*30);
-
-  if(G.mode==='relaxing'){
-    // THE COUCH. BLISS.
-    G.relax += dt*6;
-    G.peaceTotal += dt; G.peaceStreak += dt;
-    if(G.peaceStreak>G.bestStreak){ G.bestStreak=G.peaceStreak; localStorage.jsd_best=G.bestStreak; }
-    G.callTimer -= dt;
-    if(G.callTimer<=0) wifeCalls();
-    if(G.relax>=G.relaxMax){ // NIRVANA
-      G.relax=0; G.peaceTotal+=10; floaty("NIRVANA +10s","#ffd93d"); SFX.win();
-    }
-  }
-  if(G.mode==='task' && G.task){
-    G.relax = Math.max(0, G.relax - dt*10); // peace drains while she needs you
-    const t=G.task; G.taskTime+=dt;
-    if(t.type==='tap'){
-      G.taskProg = tapBursts/t.taps;
-      if(tapBursts>=t.taps){ SFX.good(); showBubble(t.ok,1800); setTimeout(()=>taskDone(true),1100); G.mode='idle'; }
-      else if(G.taskTime>6){ addSigh(25); tapBursts=0; G.taskTime=0; }
-    }
-    if(t.type==='hold'){
-      if(pressing){ G.taskProg+=dt/t.dur; }
-      else { G.taskProg=Math.max(0,G.taskProg-dt*0.25); }
-      if(G.taskProg>=1){ SFX.good(); showBubble(t.ok,1800); setTimeout(()=>taskDone(true),1100); G.mode='idle'; }
-      else if(G.taskTime>8){ addSigh(25); G.taskTime=0; }
-    }
-    if(t.type==='fetch'){
-      if(pressing) G.taskProg+=dt/t.dur;
-      if(G.taskProg>=1){ SFX.good(); showBubble(t.ok,1800); setTimeout(()=>taskDone(true),1100); G.mode='idle'; }
-    }
-  }
-  // UI bars
-  relaxFill.style.width = Math.min(100,(G.relax/G.relaxMax*100))+'%';
-  sighFill.style.width  = (G.sigh/G.sighMax*100)+'%';
+ G.t+=dt;
+ G.floats=G.floats.filter(f=>{f.t-=dt;f.y-=30*dt;return f.t>0});
+ if(G.line){G.line.t-=dt;if(G.line.t<=0)G.line=null}
+ btns=[];
+ const h=G.husband;
+ if(G.mode==='prep'){
+   G.prepT-=dt;if(G.prepT<=0)startDash();
+ }
+ else if(G.mode==='dash'){
+   G.dashT+=dt;
+   if(h.stop>0)h.stop-=dt;
+   let ax=0,ay=0;
+   if(G.drag&&G.dragPos&&h.stop<=0){
+     const d=dist(h.x,h.y,G.dragPos.x,G.dragPos.y);
+     if(d>14){ax=(G.dragPos.x-h.x)/d;ay=(G.dragPos.y-h.y)/d}
+   }
+   if(keys.has('a')||keys.has('arrowleft'))ax-=1;
+   if(keys.has('d')||keys.has('arrowright'))ax+=1;
+   if(keys.has('w')||keys.has('arrowup'))ay-=1;
+   if(keys.has('s')||keys.has('arrowdown'))ay+=1;
+   const al=Math.hypot(ax,ay);if(al>0){ax/=al;ay/=al}
+   h.x=clamp(h.x+ax*240*dt,30,930);h.y=clamp(h.y+ay*240*dt,180,470);
+   const dog={x:390+150*Math.sin(G.dashT*.8),y:405};
+   const kid={x:470+110*Math.sin(G.dashT*1.4+1),y:372+32*Math.sin(G.dashT*2.3)};
+   if(dist(h.x,h.y,dog.x,dog.y)<38){sfx.oof();h.x-=Math.sign(h.x-dog.x||1)*70;h.y-=Math.sign(h.y-dog.y||1)*70;h.stop=.35;G.sigh=Math.min(100,G.sigh+10);float(h.x,h.y-50,'OOF!','#ff6b8a')}
+   if(dist(h.x,h.y,kid.x,kid.y)<30){sfx.oof();h.x-=Math.sign(h.x-kid.x||1)*50;h.y-=Math.sign(h.y-kid.y||1)*50;h.stop=.3;G.sigh=Math.min(100,G.sigh+8);float(kid.x,kid.y-40,'HEY!','#ff6b8a')}
+   if(dist(h.x,h.y,565,435)<38&&h.stop<=0){sfx.thump();h.stop=.6;h.y-=60;float(565,400,'Laundry basket. Of course.','#ffd23e')}
+   for(const [x0,x1] of [[320,400],[500,590],[670,730]]){
+     if(h.x>x0&&h.x<x1&&h.y>350&&!h.squeaked[x0]){h.squeaked[x0]=true;sfx.squeak();showLine('\u2026that floorboard.')}
+   }
+   if(!h.seen){
+     const wx=480,wy=140,dx=h.x-wx,dy=h.y-wy,d=Math.hypot(dx,dy);
+     if(d<300&&Math.abs(Math.atan2(dx,dy))<.36){h.seen=true;G.sigh=Math.min(100,G.sigh+8);showLine('She saw you walk past. No reason given.')}
+   }
+   if(Math.abs(h.x-800)<70&&Math.abs(h.y-400)<80){G.mode='sit';G.sitT=1.3;sfx.sit();showLine('\u201cOoh. Finally.\u201d')}
+ }
+ else if(G.mode==='sit'){
+   G.sitT-=dt;if(G.sitT<=0)startRelax();
+ }
+ else if(G.mode==='strike'){
+   G.strikeT-=dt;if(G.strikeT<=0){G.mode='relax';G.spawnT=2}
+ }
+ else if(G.mode==='relax'){
+   G.relaxT-=dt;G.peaceOfDay+=dt;G.totalPeace+=dt;G.pp+=dt;
+   if(G.sigh>=100){doStrike();return}
+   G.sigh=Math.max(0,G.sigh-4*dt);
+   if(G.tasks.length<2){G.spawnT-=dt;if(G.spawnT<=0){spawnTask();G.spawnT=Math.max(2.2,6.5-G.day*.4)*R(.8,1.2)}}
+   for(const t of G.tasks.slice())updateTask(t,dt);
+   if(G.sigh>=100){doStrike();return}
+   if(G.relaxT<=0)endDay();
+ }
 }
 
-// ============================== DRAW ==============================
-function draw(t){
-  ctx.save();
-  if(G&&G.shake>0) ctx.translate((Math.random()-.5)*G.shake,(Math.random()-.5)*G.shake);
-  // room
-  const g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#4a3a2e'); g.addColorStop(.6,'#5c4636'); g.addColorStop(1,'#3d2c22');
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-  // floor
-  ctx.fillStyle='#7a5c3e'; ctx.fillRect(0,H*.62,W,H*.38);
-  ctx.strokeStyle='#6b4f34'; ctx.lineWidth=2;
-  for(let i=0;i<6;i++){ ctx.beginPath(); ctx.moveTo(0,H*.66+i*26); ctx.lineTo(W,H*.63+i*26); ctx.stroke(); }
-  // rug
-  ctx.fillStyle='#8f4b3f'; ctx.beginPath(); ctx.ellipse(W/2,H*.8,W*.42,H*.09,0,0,7); ctx.fill();
-  ctx.strokeStyle='#c46b5c'; ctx.lineWidth=4; ctx.stroke();
-  // lamp
-  ctx.fillStyle='#3a2a1c'; ctx.fillRect(W*.08,H*.30,10,H*.34);
-  ctx.fillStyle='#ffd98a'; ctx.beginPath(); ctx.moveTo(W*.08-34,H*.32); ctx.lineTo(W*.08+44,H*.32); ctx.lineTo(W*.08+28,H*.16); ctx.lineTo(W*.08-18,H*.16); ctx.fill();
-  if(G&&G.mode==='relaxing'){ ctx.globalAlpha=.15+Math.sin(t*3)*.05; ctx.fillStyle='#ffe9b0'; ctx.beginPath(); ctx.arc(W*.08,H*.3,90,0,7); ctx.fill(); ctx.globalAlpha=1; }
-  // plant
-  ctx.fillStyle='#a0522d'; ctx.fillRect(W*.85,H*.52,26,40);
-  ctx.fillStyle='#3e7c3e';
-  for(let i=0;i<5;i++){ ctx.beginPath(); ctx.ellipse(W*.87+Math.cos(i*1.3)*22,H*.5+Math.sin(i*1.3)*18,14,26,i,0,7); ctx.fill(); }
-  // doorway (right)
-  ctx.fillStyle='#2a1c12'; ctx.fillRect(W*.72,H*.12,W*.22,H*.5);
-  ctx.fillStyle='#1c120a'; ctx.fillRect(W*.74,H*.14,W*.18,H*.48);
-  // wife in doorway
-  if(G && (G.mode==='calling'||G.mode==='task'||G.mode==='boss')){
-    const wx=W*.83, wy=H*.30+Math.sin(t*10)*2;
-    ctx.fillStyle='#111'; // silhouette
-    ctx.beginPath(); ctx.arc(wx,wy-38,16,0,7); ctx.fill(); // head
-    ctx.beginPath(); ctx.moveTo(wx-20,wy+40); ctx.quadraticCurveTo(wx,wy-30,wx+20,wy+40); ctx.fill(); // dress
-    // pointing arm
-    ctx.strokeStyle='#111'; ctx.lineWidth=9; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(wx-8,wy-20); ctx.lineTo(wx-70,wy-34+Math.sin(t*14)*4); ctx.stroke();
-    // angry marks
-    ctx.strokeStyle='#ff4d4d'; ctx.lineWidth=3;
-    for(let i=0;i<3;i++){ const a=t*8+i*2.1; ctx.beginPath();
-      ctx.moveTo(wx+Math.cos(a)*26,wy-38+Math.sin(a)*26);
-      ctx.lineTo(wx+Math.cos(a)*34,wy-38+Math.sin(a)*34); ctx.stroke(); }
-  }
-  // COUCH
-  const cx=W*.5, cy=H*.72;
-  ctx.fillStyle='#8f3b2f'; ctx.beginPath(); ctx.roundRect(cx-W*.3,cy-70,W*.6,110,20); ctx.fill();
-  ctx.fillStyle='#a8462f'; ctx.beginPath(); ctx.roundRect(cx-W*.3,cy-70,W*.6,44,18); ctx.fill(); // backrest
-  ctx.fillStyle='#7c3226'; // cushions
-  ctx.beginPath(); ctx.roundRect(cx-W*.28,cy-30,W*.26,44,12); ctx.fill();
-  ctx.beginPath(); ctx.roundRect(cx+W*.02,cy-30,W*.26,44,12); ctx.fill();
-  // plaid pattern
-  ctx.strokeStyle='#00000022'; ctx.lineWidth=3;
-  for(let i=0;i<8;i++){ ctx.beginPath(); ctx.moveTo(cx-W*.28+i*W*.075,cy-30); ctx.lineTo(cx-W*.28+i*W*.075,cy+16); ctx.stroke(); }
-  // HUSBAND (key-art sprite: blissful or alarmed)
-  if(G){
-    if(!draw.spr){ draw.spr={}; ['sprite_sit_relax','sprite_sit_alert'].forEach(k=>{
-      const im=new Image(); im.src='art/'+k+'.png'; draw.spr[k]=im;}); }
-    const relaxed = G.mode==='relaxing';
-    const img = draw.spr[relaxed?'sprite_sit_relax':'sprite_sit_alert'];
-    if(img&&img.complete&&img.naturalWidth){
-      const bobY=relaxed?Math.sin(G.bob*2)*4:Math.sin(t*14)*3;
-      const sc=Math.min(W*.62/img.width, H*.3/img.height);
-      const sw=img.width*sc, sh=img.height*sc;
-      const sx=cx-sw/2, sy=cy-58-sh+30+bobY;
-      if(relaxed){
-        // holy light rays behind him
-        ctx.save();ctx.translate(cx,sy+sh*.4);
-        for(let i=0;i<8;i++){ctx.rotate(Math.PI/4);ctx.fillStyle='rgba(255,230,140,.08)';
-          ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-30,-260);ctx.lineTo(30,-260);ctx.fill();}
-        ctx.restore();
-        ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(cx,cy+42,sw*.34,12,0,0,7);ctx.fill();
-      }
-      ctx.drawImage(img,sx,sy,sw,sh);
-      if(relaxed){
-        ctx.fillStyle='#ffffffcc'; ctx.font='16px Bangers';
-        ctx.fillText('z',sx+sw+4,sy+26); ctx.font='12px Bangers'; ctx.fillText('z',sx+sw+16,sy+12);
-      } else {
-        ctx.fillStyle='#7ec8ff';
-        const sp=(t*80)%26; ctx.globalAlpha=1-sp/26;
-        ctx.beginPath();ctx.ellipse(sx-8,sy+10+sp,3,5,0,0,7);ctx.fill();
-        ctx.beginPath();ctx.ellipse(sx+sw+6,sy+16+sp,3,5,0,0,7);ctx.fill();
-        ctx.globalAlpha=1;
-      }
-    }
-  }
-  // task progress ring
-  if(G && G.mode==='task' && G.task && G.task.type!=='choice'){
-    ctx.strokeStyle='#00000066'; ctx.lineWidth=10;
-    ctx.beginPath(); ctx.arc(W/2,H*.5,46,0,7); ctx.stroke();
-    ctx.strokeStyle='#6bff8f'; ctx.lineWidth=10; ctx.lineCap='round';
-    ctx.beginPath(); ctx.arc(W/2,H*.5,46,-Math.PI/2,-Math.PI/2+G.taskProg*2*Math.PI); ctx.stroke();
-    ctx.fillStyle='#fff'; ctx.font='20px Bangers'; ctx.textAlign='center';
-    const lbl = G.task.type==='tap' ? (tapBursts+'/'+G.task.taps) :
-                G.task.type==='hold' ? 'HOLD!' : 'HOLD TO FETCH';
-    ctx.fillText(lbl, W/2, H*.5+7); ctx.textAlign='left';
-  }
-  // relax aura when relaxing
-  if(G && G.mode==='relaxing'){
-    ctx.fillStyle='#ffffff10';
-    ctx.beginPath(); ctx.arc(cx,cy,90+Math.sin(t*2)*8,0,7); ctx.fill();
-  }
-  ctx.restore();
+/* ---------------- input ---------------- */
+const keys=new Set();
+addEventListener('keydown',e=>keys.add(e.key.toLowerCase()));
+addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+function ptr(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}}
+cv.addEventListener('pointerdown',e=>{
+ e.preventDefault();const p=ptr(e);ac();
+ for(let i=btns.length-1;i>=0;i--){const b=btns[i];if(!b.disabled&&p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){b.cb();return}}
+ if(G.mode==='title'){startGame();return}
+ if(G.mode==='prep'){
+   for(const hs of HOTSPOTS){
+     if(dist(p.x,p.y,hs.x,hs.y)<36&&!G.prepped[hs.id]){
+       G.prepped[hs.id]=true;sfx.ding();
+       const idx=G.todayPool.map(t=>TASKDEFS[t].prep).indexOf(hs.id);
+       if(hs.id==='furn'){float(hs.x,hs.y-40,'It was never going to be a problem.','#8fd3ff')}
+       else if(idx>=0){
+         const toRemove=[];G.todayPool.forEach((t,i)=>{if(TASKDEFS[t].prep===hs.id)toRemove.push(i)});
+         toRemove.reverse().forEach(i=>G.todayPool.splice(i,1));
+         G.dayPrevented+=toRemove.length;G.pp+=5*toRemove.length;
+         float(hs.x,hs.y-40,'PREVENTED +'+(5*toRemove.length),'#7dff9b');
+       } else float(hs.x,hs.y-40,'Prepped. Probably.','#8fd3ff');
+       break;
+     }
+   }
+   return;
+ }
+ if(G.mode==='dash'){G.drag=true;G.dragPos=p;return}
+ if(G.mode==='relax'){
+   for(const t of G.tasks.slice()){if(inCard(t,p)){taskDown(t,p);break}}
+ }
+});
+cv.addEventListener('pointermove',e=>{
+ const p=ptr(e);
+ if(G.mode==='dash')G.dragPos=p;
+ if(G.mode==='relax')for(const t of G.tasks.slice())if(inCard(t,p)){taskMove(t,p);break}
+});
+addEventListener('pointerup',e=>{
+ G.drag=false;
+ if(G.mode==='relax')for(const t of G.tasks.slice())if(inCard(t,ptr(e)))taskUp(t);
+});
+
+/* ---------------- drawing helpers ---------------- */
+function btn(x,y,w,h,label,cb,disabled){
+ btns.push({x,y,w,h,cb,disabled});
+ ctx.save();
+ ctx.fillStyle=disabled?'#2a2438':(cb?'#274060':'#274060');
+ rr(x,y,w,h,10);ctx.fill();
+ ctx.strokeStyle=disabled?'#3a3450':'#5a8fd8';ctx.lineWidth=2;rr(x,y,w,h,10);ctx.stroke();
+ ctx.fillStyle=disabled?'#5a5470':'#cfe4ff';
+ ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.fillText(label,x+w/2,y+h/2);
+ ctx.restore();
+}
+function bigText(text,x,y,size,color,font){
+ ctx.save();ctx.fillStyle=color||'#fff';ctx.font='bold '+(size||40)+'px '+(font||'system-ui');ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=8;ctx.fillText(text,x,y);ctx.restore();
+}
+function drawWife(x,y,scale,armCrossed){
+ const c=ctx;c.save();c.translate(x,y);c.scale(scale,scale);
+ // dress
+ c.fillStyle='#2b7f7a';c.beginPath();c.moveTo(-14,-46);c.lineTo(14,-46);c.lineTo(22,0);c.lineTo(-22,0);c.closePath();c.fill();
+ // arms crossed
+ if(armCrossed!==false){c.strokeStyle='#e8b98a';c.lineWidth=5;c.beginPath();c.moveTo(-12,-36);c.lineTo(12,-30);c.moveTo(12,-36);c.lineTo(-12,-30);c.stroke()}
+ else{c.strokeStyle='#e8b98a';c.lineWidth=5;c.beginPath();c.moveTo(-12,-38);c.lineTo(-14,-14);c.moveTo(12,-38);c.lineTo(14,-14);c.stroke()}
+ // head
+ c.fillStyle='#e8b98a';c.beginPath();c.arc(0,-58,11,0,TAU);c.fill();
+ // hair
+ c.fillStyle='#1d1524';c.beginPath();c.arc(0,-60,12.5,Math.PI*.95,Math.PI*2.05);c.fill();
+ c.fillRect(-13,-60,5,14);c.fillRect(8,-60,5,14);
+ c.restore();
+}
+function drawHusband(x,y,pose,legT){
+ const c=ctx;c.save();c.translate(x,y);
+ const stressed=G.sigh>55;
+ if(pose==='sit'){
+   c.fillStyle='#3f8f5f';rr(-21,-56,42,46,9);c.fill(); // torso
+   c.fillStyle='#e8b98a'; // arms on knees
+   c.strokeStyle='#e8b98a';c.lineWidth=6;c.beginPath();c.moveTo(-16,-42);c.lineTo(-12,-16);c.moveTo(16,-42);c.lineTo(12,-16);c.stroke();
+   c.fillStyle='#4a5568';rr(-26,-30,20,34,7);c.fill();rr(6,-30,20,34,7);c.fill(); // knees
+   c.fillStyle='#191521';c.fillRect(-28,-2,16,8);c.fillRect(12,-2,16,8); // feet
+   c.fillStyle='#e8b98a';c.beginPath();c.arc(0,-72,16,0,TAU);c.fill(); // head
+   c.fillStyle='#4a3b2a';c.beginPath();c.arc(0,-76,16,Math.PI,TAU);c.fill(); // hair
+   c.fillStyle='#fff';c.beginPath();c.arc(-6,-72,4,0,TAU);c.arc(7,-72,4,0,TAU);c.fill();
+   c.fillStyle='#222';const px=stressed?Math.sin(G.t*30)*2:1;
+   c.beginPath();c.arc(-6+px,-72,1.8,0,TAU);c.arc(7+px,-72,1.8,0,TAU);c.fill();
+   if(stressed){c.strokeStyle='#4a3b2a';c.lineWidth=2;c.beginPath();c.moveTo(-10,-79);c.lineTo(-3,-77);c.moveTo(11,-79);c.lineTo(4,-77);c.stroke()}
+   c.strokeStyle='#7a4a3a';c.lineWidth=2;c.beginPath();
+   if(stressed)c.arc(0,-64,4,Math.PI*1.15,Math.PI*1.85);else c.arc(0,-68,4,Math.PI*.15,Math.PI*.85);
+   c.stroke();
+ } else {
+   const sw=Math.sin((legT||0)*10)*8;
+   c.fillStyle='#4a5568'; // legs
+   rr(-13+sw*.4,-38,11,38,5);c.fill();rr(2-sw*.4,-38,11,38,5);c.fill();
+   c.fillStyle='#191521';c.fillRect(-15+sw*.5,-4,14,6);c.fillRect(1-sw*.5,-4,14,6);
+   c.fillStyle='#3f8f5f';rr(-19,-78,38,44,9);c.fill(); // torso
+   c.strokeStyle='#e8b98a';c.lineWidth=6;c.beginPath();c.moveTo(-15,-70);c.lineTo(-17,-44);c.moveTo(15,-70);c.lineTo(17,-44);c.stroke();
+   c.fillStyle='#e8b98a';c.beginPath();c.arc(0,-92,15,0,TAU);c.fill();
+   c.fillStyle='#4a3b2a';c.beginPath();c.arc(0,-96,15,Math.PI,TAU);c.fill();
+   c.fillStyle='#fff';c.beginPath();c.arc(-5,-92,3.6,0,TAU);c.arc(7,-92,3.6,0,TAU);c.fill();
+   c.fillStyle='#222';c.beginPath();c.arc(-4,-92,1.7,0,TAU);c.arc(8,-92,1.7,0,TAU);c.fill();
+   c.strokeStyle='#7a4a3a';c.lineWidth=2;c.beginPath();c.arc(2,-86,4,Math.PI*.1,Math.PI*.7);c.stroke();
+ }
+ c.restore();
+}
+function drawCouch(x,y,glow){
+ const c=ctx;c.save();c.translate(x,y);
+ if(glow){
+   const g=c.createRadialGradient(0,-30,10,0,-30,120+Math.sin(G.t*2)*8);
+   g.addColorStop(0,'rgba(255,240,180,.35)');g.addColorStop(1,'rgba(255,240,180,0)');
+   c.fillStyle=g;c.beginPath();c.ellipse(0,-30,130,110,0,0,TAU);c.fill();
+ }
+ c.fillStyle='#8a4b2f';rr(-95,-58,190,60,14);c.fill(); // base
+ c.fillStyle='#a05a3a';rr(-80,-78,66,30,10);c.fill();rr(14,-78,66,30,10);c.fill(); // cushions
+ c.fillStyle='#743f27';rr(-105,-88,22,66,9);c.fill();rr(83,-88,22,66,9);c.fill(); // arms
+ c.fillStyle='#5d3320';c.fillRect(-90,2,10,10);c.fillRect(80,2,10,10);
+ c.restore();
+}
+function drawDog(x,y,runT){
+ const c=ctx;c.save();c.translate(x,y);
+ const b=Math.sin((runT||0)*12)*3;
+ c.fillStyle='#8a6a45';
+ c.beginPath();c.ellipse(0,-12+b*.3,20,12,0,0,TAU);c.fill();
+ c.beginPath();c.arc(19,-18+b*.3,8,0,TAU);c.fill(); // head
+ c.fillStyle='#6a4a2a';c.beginPath();c.arc(15,-24+b*.3,4,0,TAU);c.fill(); // ear
+ c.strokeStyle='#8a6a45';c.lineWidth=3;
+ c.beginPath();c.moveTo(14,-14+b*.3);c.lineTo(22,-12+b*.3);c.stroke(); // snout
+ c.fillStyle='#222';c.beginPath();c.arc(22,-13+b*.3,2,0,TAU);c.fill();
+ c.strokeStyle='#8a6a45';c.lineWidth=2.5;
+ for(let i=0;i<3;i++){c.beginPath();c.moveTo(-8+i*7,-2+b*.3);c.lineTo(-8+i*7+Math.sin((runT||0)*14+i)*4,8);c.stroke()}
+ c.restore();
+}
+function drawKid(x,y,t){
+ const c=ctx;c.save();c.translate(x,y);const b=Math.abs(Math.sin(t*6))*6;
+ c.fillStyle='#c25a7a';rr(-10,-30+b,20,24,7);c.fill();
+ c.fillStyle='#e8b98a';c.beginPath();c.arc(0,-38+b,8,0,TAU);c.fill();
+ c.fillStyle='#5a3b2a';c.beginPath();c.arc(0,-41+b,8.5,Math.PI,TAU);c.fill();
+ c.beginPath();c.arc(-9,-42+b,3.5,0,TAU);c.arc(9,-42+b,3.5,0,TAU);c.fill();
+ c.strokeStyle='#e8b98a';c.lineWidth=4;c.beginPath();c.moveTo(-6,-10+b);c.lineTo(-6,4);c.moveTo(6,-10+b);c.lineTo(6,4);c.stroke();
+ c.restore();
+}
+function drawHouse(){
+ const c=ctx;
+ c.fillStyle='#241d33';c.fillRect(0,0,W,430); // walls
+ c.fillStyle='#3a2c22';c.fillRect(0,430,W,110); // floor
+ c.strokeStyle='rgba(0,0,0,.25)';c.lineWidth=2;
+ for(let x=0;x<W;x+=60){c.beginPath();c.moveTo(x,430);c.lineTo(x,540);c.stroke()}
+ // kitchen
+ c.fillStyle='#39304e';c.fillRect(30,220,110,210); // fridge
+ c.strokeStyle='#584a75';c.strokeRect(30,220,110,210);
+ c.beginPath();c.moveTo(140,330);c.lineTo(280,330);c.strokeStyle='#584a75';c.lineWidth=6;c.stroke(); // counter
+ c.fillStyle='#39304e';c.fillRect(150,330,20,100);c.fillRect(240,330,20,100);
+ // hallway door
+ c.fillStyle='#1c1628';c.fillRect(455,160,90,270);
+ c.strokeStyle='#584a75';c.lineWidth=3;c.strokeRect(455,160,90,270);
+ c.fillStyle='#c9b458';c.beginPath();c.arc(533,300,4,0,TAU);c.fill();
+ // window
+ c.fillStyle='#101321';c.fillRect(600,180,140,150);
+ c.strokeStyle='#584a75';c.lineWidth=4;c.strokeRect(600,180,140,150);
+ c.beginPath();c.moveTo(670,180);c.lineTo(670,330);c.moveTo(600,255);c.lineTo(740,255);c.stroke();
+ c.fillStyle='#fff';c.beginPath();c.arc(630,210,2,0,TAU);c.arc(700,300,2,0,TAU);c.arc(720,205,1.5,0,TAU);c.fill();
+ // rug
+ c.fillStyle='#5d2f45';c.beginPath();c.ellipse(800,430,130,26,0,0,TAU);c.fill();
+ // tv
+ c.fillStyle='#101018';c.fillRect(660,240,80,55);c.strokeStyle='#333';c.strokeRect(660,240,80,55);
+ // side table
+ c.fillStyle='#584a75';c.fillRect(745,330,50,6);c.fillRect(760,336,14,94);
+}
+function drawRelaxBG(){
+ const c=ctx;
+ c.fillStyle='#241d33';c.fillRect(0,0,W,430);
+ c.fillStyle='#3a2c22';c.fillRect(0,430,W,110);
+ c.strokeStyle='rgba(0,0,0,.25)';c.lineWidth=2;
+ for(let x=0;x<W;x+=60){c.beginPath();c.moveTo(x,430);c.lineTo(x,540);c.stroke()}
+ // TV glow
+ const g=c.createLinearGradient(0,0,300,0);
+ g.addColorStop(0,'rgba(90,140,255,.18)');g.addColorStop(1,'rgba(90,140,255,0)');
+ c.fillStyle=g;c.fillRect(0,0,320,430);
+ c.fillStyle='#0c0c14';c.fillRect(40,180,170,110);
+ c.fillStyle='rgba(120,170,255,.5)';c.font='10px system-ui';c.textAlign='center';
+ c.fillText('DRAMA',125,240);
+ // window
+ c.fillStyle='#101321';c.fillRect(760,140,150,170);
+ c.strokeStyle='#584a75';c.lineWidth=4;c.strokeRect(760,140,150,170);
+ c.beginPath();c.moveTo(835,140);c.lineTo(835,310);c.stroke();
+ c.fillStyle='#fff';c.beginPath();c.arc(800,180,2,0,TAU);c.arc(870,260,2,0,TAU);c.arc(810,290,1.5,0,TAU);c.fill();
+ c.fillStyle='#5d2f45';c.beginPath();c.ellipse(480,470,220,30,0,0,TAU);c.fill();
+}
+function drawLine(){
+ if(!G.line)return;
+ const c=ctx;
+ const w=Math.min(560,ctx.measureText(G.line.text).width+70);
+ const x=W/2-w/2,y=52;
+ c.save();c.globalAlpha=clamp(G.line.t/.4,0,1);
+ c.fillStyle='rgba(20,15,30,.92)';rr(x,y,w,40,12);c.fill();
+ c.strokeStyle='#e8d5ff';c.lineWidth=2;rr(x,y,w,40,12);c.stroke();
+ c.beginPath();c.moveTo(W/2,y+40);c.lineTo(W/2-12,y+52);c.lineTo(W/2+12,y+40);c.closePath();
+ c.fillStyle='rgba(20,15,30,.92)';c.fill();
+ c.fillStyle='#fff';c.font='15px system-ui';c.textAlign='center';c.textBaseline='middle';
+ c.fillText(G.line.text,W/2,y+20,540);
+ c.restore();
+}
+function drawFloats(){
+ for(const f of G.floats){
+   ctx.save();ctx.globalAlpha=clamp(f.t,0,1);
+   ctx.fillStyle=f.color;ctx.font='bold 16px system-ui';ctx.textAlign='center';
+   ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=6;
+   ctx.fillText(f.text,f.x,f.y);ctx.restore();
+ }
+}
+function drawHUD(extra){
+ const c=ctx;
+ c.fillStyle='rgba(12,9,20,.85)';c.fillRect(0,0,W,44);
+ c.font='bold 16px system-ui';c.textBaseline='middle';
+ c.textAlign='left';c.fillStyle='#ffd23e';c.fillText('DAY '+G.day,16,22);
+ c.fillStyle='#7dff9b';c.fillText('PEACE '+Math.floor(G.totalPeace)+'s',120,22);
+ c.fillStyle='#8fd3ff';c.fillText('PP '+Math.floor(G.pp),270,22);
+ // sigh meter
+ c.fillStyle='#5a2438';rr(400,12,180,20,10);c.fill();
+ if(G.sigh>0){c.fillStyle='#ff4d6d';rr(400,12,180*G.sigh/100,20,10);c.fill()}
+ c.strokeStyle='#8a3450';c.lineWidth=2;rr(400,12,180,20,10);c.stroke();
+ c.fillStyle='#fff';c.font='bold 11px system-ui';c.textAlign='center';c.fillText('SIGH',490,23);
+ // strikes as talk icons
+ for(let i=0;i<3;i++){
+   const x=610+i*34;
+   c.fillStyle=i<G.strikes?'#ff4d6d':'#2a2438';
+   c.beginPath();c.moveTo(x,10);c.lineTo(x+22,10);c.lineTo(x+22,26);c.lineTo(x+12,26);c.lineTo(x+8,32);c.lineTo(x+8,26);c.closePath();c.fill();
+   c.fillStyle=i<G.strikes?'#fff':'#5a5470';c.font='bold 11px system-ui';c.fillText('!',x+11,19);
+ }
+ if(extra)c.fillText(extra,860,22);
+}
+function drawShieldBtns(){
+ if(G.mode!=='relax')return;
+ const canS=G.shield>0&&G.tasks.length>0;
+ const canE=G.ejectLeft>0&&G.tasks.length>0;
+ btn(640,470,150,48,'\u201cI JUST SAT DOWN\u201d \u00d7'+G.shield,useShield,!canS);
+ if(U.eject)btn(800,470,140,48,'EJECT \u00d7'+G.ejectLeft,useEject,!canE);
 }
 
-// ============================== BUTTONS ==============================
-$('startBtn').onclick = startGame;
-$('retryBtn').onclick = startGame;
-$('bestLine').textContent = parseFloat(localStorage.jsd_best||"0").toFixed(1)+'s';
+/* ---------------- task cards ---------------- */
+function drawCard(t){
+ const c=ctx,x=t.x,y=t.y,s=t.s;
+ c.fillStyle='rgba(16,12,26,.92)';rr(x,y,300,215,14);c.fill();
+ c.strokeStyle='#5a8fd8';c.lineWidth=2;rr(x,y,300,215,14);c.stroke();
+ // timer bar
+ const frac=clamp(t.t/t.max,0,1);
+ c.fillStyle='#3a2440';rr(x+12,y+12,276,8,4);c.fill();
+ c.fillStyle=frac>.4?'#7dff9b':'#ff4d6d';rr(x+12,y+12,276*frac,8,4);c.fill();
+ c.save();c.translate(x,y);
+ if(t.type==='phone'){
+   c.fillStyle='#fff';c.font='bold 13px system-ui';c.textAlign='center';
+   c.fillText('SWIPE THE PHONE \u2190 TO HER',150,36);
+   const sh=Math.sin(t.t*25)*5;
+   c.save();c.translate(150+sh,95);
+   c.fillStyle='#191521';rr(-16,-28,32,56,7);c.fill();
+   c.fillStyle='#4d7dff';rr(-12,-22,24,44,4);c.fill();
+   c.fillStyle='#fff';c.font='bold 9px system-ui';c.fillText('HER',0,0);
+   c.restore();
+   if(s.drag){c.strokeStyle='#7dff9b';c.lineWidth=3;c.setLineDash([6,6]);c.beginPath();c.moveTo(120,95);c.lineTo(20,95);c.stroke();c.setLineDash([])}
+   c.fillStyle='#8fd3ff';c.font='11px system-ui';c.fillText('it rings. it is not important. it is everything.',150,150);
+ }
+ else if(t.type==='spider'){
+   c.fillStyle='#fff';c.font='bold 13px system-ui';c.textAlign='center';
+   c.fillText('TAP TO SWAT ('+s.hits+'/'+s.need+')',150,26);
+   c.save();c.translate(s.x,s.y);
+   c.fillStyle='#1a1220';c.beginPath();c.ellipse(0,0,10,7,0,0,TAU);c.fill();
+   c.strokeStyle='#1a1220';c.lineWidth=2;
+   for(let i=0;i<4;i++){const a=-.7+i*.47;c.beginPath();c.moveTo(-8,0);c.lineTo(-22,Math.sin(G.t*10+i)*4-8+i*5);c.moveTo(8,0);c.lineTo(22,Math.sin(G.t*10+i+2)*4-8+i*5);c.stroke()}
+   c.fillStyle='#ff4d6d';c.beginPath();c.arc(-6,-3,1.6,0,TAU);c.arc(-6,3,1.6,0,TAU);c.fill();
+   c.restore();
+   c.strokeStyle='#584a75';c.setLineDash([4,4]);c.strokeRect(2,2,296,211);c.setLineDash([]);
+   c.fillStyle='#8fd3ff';c.font='11px system-ui';c.textAlign='center';c.fillText('if it reaches the window, you lose',150,196);
+ }
+ else if(t.type==='thermo'){
+   c.fillStyle='#fff';c.font='bold 13px system-ui';c.textAlign='center';
+   c.fillText('TAP WHEN THE NEEDLE HITS GREEN',150,26);
+   c.save();c.translate(150,105);
+   c.fillStyle='#241d33';c.beginPath();c.arc(0,0,58,0,TAU);c.fill();
+   c.strokeStyle='#584a75';c.lineWidth=2;c.stroke();
+   c.strokeStyle='#7dff9b';c.lineWidth=8;c.beginPath();c.arc(0,0,48,s.zoneC-s.zoneW/2,s.zoneC+s.zoneW/2);c.stroke();
+   c.strokeStyle='#ff4d6d';c.lineWidth=4;c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(s.a)*44,Math.sin(s.a)*44);c.stroke();
+   c.fillStyle='#fff';c.font='bold 12px system-ui';c.fillText('72\u00b0',0,-2);
+   c.restore();
+ }
+ else if(t.type==='lamp'){
+   c.fillStyle='#fff';c.font='bold 13px system-ui';c.textAlign='center';
+   c.fillText('HOLD DOWN. KEEP IT STILL. '+Math.max(0,s.timer).toFixed(1)+'s',150,26);
+   c.save();c.translate(150,150);c.rotate(s.w);
+   c.fillStyle='#8a6a45';c.fillRect(-3,-70,6,70); // stem
+   c.fillStyle='#c9b458';c.beginPath();c.moveTo(-26,-70);c.lineTo(26,-70);c.lineTo(14,-96);c.lineTo(-14,-96);c.closePath();c.fill();
+   c.fillStyle='#5d4a30';c.fillRect(-18,0,36,10);
+   c.restore();
+   c.fillStyle='#8fd3ff';c.font='11px system-ui';c.textAlign='center';c.fillText('the lamp is doing fine without you, but hold it anyway',150,196);
+ }
+ else if(t.type==='trap'){
+   c.fillStyle='#ffd23e';c.font='bold 19px system-ui';c.textAlign='center';
+   c.fillText('\u201cDo I look tired?\u201d',150,55);
+   c.fillStyle='#8fd3ff';c.font='12px system-ui';
+   c.fillText('there is no right answer. there was never a right answer.',150,85);
+   c.font='12px system-ui';c.fillStyle='#7a7390';c.fillText('...or say nothing',150,115);
+   c.save();c.restore();
+   // local buttons
+   c.fillStyle='#3a2440';rr(80,135,95,40,8);c.fill();c.strokeStyle='#8a3450';c.lineWidth=2;rr(80,135,95,40,8);c.stroke();
+   c.fillStyle='#ff6b8a';c.font='bold 16px system-ui';c.textAlign='center';c.fillText('YES',127,156);
+   c.fillStyle='#3a2440';rr(185,135,95,40,8);c.fill();c.strokeStyle='#8a3450';rr(185,135,95,40,8);c.stroke();
+   c.fillStyle='#ff6b8a';c.fillText('NO',232,156);
+ }
+ else if(t.type==='remote'){
+   c.fillStyle='#fff';c.font='bold 13px system-ui';c.textAlign='center';
+   c.fillText('RAPID TAP THE CUSHION ('+s.taps+'/'+s.need+')',150,26);
+   const pop=s.pop>0?Math.sin(s.pop*30)*6:0;
+   c.fillStyle='#a05a3a';rr(80,85+pop,140,60,16);c.fill();
+   c.fillStyle='#743f27';c.beginPath();c.arc(150,115+pop,10,0,TAU);c.fill(); // dent
+   c.fillStyle='#8fd3ff';c.font='11px system-ui';c.fillText('cushion #3 of 7. statistically inevitable',150,185);
+ }
+ else if(t.type==='dog'){
+   c.fillStyle='#fff';c.font='bold 13px system-ui';c.textAlign='center';
+   c.fillText('TAP BARNABY 3\u00d7 ('+s.hits+'/'+s.need+')',150,26);
+   const pop=s.pop>0?Math.sin(s.pop*30)*8:0;
+   c.save();c.translate(s.x,110+pop);
+   c.fillStyle='#8a6a45';c.beginPath();c.ellipse(0,-12,18,11,0,0,TAU);c.fill();
+   c.beginPath();c.arc(17,-18,7,0,TAU);c.fill();
+   c.fillStyle='#2b4a8a';rr(22,-30,16,10,3);c.fill(); // the shoe
+   c.fillStyle='#fff';c.beginPath();c.arc(21,-20,1.6,0,TAU);c.fill();
+   c.restore();
+   c.fillStyle='#8fd3ff';c.font='11px system-ui';c.textAlign='center';c.fillText('the shoe is the good shoe. the good one.',150,196);
+ }
+ else if(t.type==='chips'){
+   c.fillStyle='#fff';c.font='bold 13px system-ui';c.textAlign='center';
+   c.fillText('PICK. NOW.',150,26);
+   c.fillStyle='#c0392b';rr(60,55,60,80,8);c.fill();c.fillStyle='#fff';c.font='bold 12px system-ui';c.fillText('NACHOS',90,98);
+   c.fillStyle='#2b4a8a';rr(180,55,60,80,8);c.fill();c.fillStyle='#fff';c.fillText('SEA SALT',210,98);
+   c.fillStyle='#8fd3ff';c.font='11px system-ui';c.fillText('both answers are a small crime',150,170);
+ }
+ else if(t.type==='smell'){
+   c.fillStyle='#fff';c.font='bold 13px system-ui';c.textAlign='center';
+   c.fillText('STOP THE NOSE IN THE GREEN ZONE',150,26);
+   c.fillStyle='#241d33';rr(40,95,220,26,13);c.fill();
+   c.fillStyle='rgba(125,255,155,.35)';rr(130,95,40,26,0);c.fill();
+   c.save();c.translate(40+s.pos,95);
+   c.fillStyle='#e8b98a';c.beginPath();c.ellipse(0,13,10,14,0,0,TAU);c.fill();
+   c.fillStyle='#c98a68';c.beginPath();c.arc(-3,16,2.4,0,TAU);c.arc(3,16,2.4,0,TAU);c.fill();
+   c.restore();
+   btn.call?null:null;
+   c.save();
+   c.fillStyle='#274060';rr(100,150,100,34,8);c.fill();c.strokeStyle='#5a8fd8';c.lineWidth=2;rr(100,150,100,34,8);c.stroke();
+   c.fillStyle='#cfe4ff';c.font='bold 14px system-ui';c.textAlign='center';c.fillText('SNIFF',150,168);
+   c.restore();
+ }
+ c.restore();
+}
+
+/* ---------------- screens ---------------- */
+function renderTitle(){
+ const c=ctx;
+ c.fillStyle='#0d0a14';c.fillRect(0,0,W,H);
+ if(G.titleArt){
+   // cover-fit the 16:9 art
+   c.globalAlpha=.9;c.drawImage(G.titleArt,0,0,W,H);c.globalAlpha=1;
+   const g=c.createLinearGradient(0,0,0,H);
+   g.addColorStop(0,'rgba(13,10,20,.55)');g.addColorStop(.35,'rgba(13,10,20,.12)');
+   g.addColorStop(.62,'rgba(13,10,20,.12)');g.addColorStop(1,'rgba(13,10,20,.78)');
+   c.fillStyle=g;c.fillRect(0,0,W,H);
+   const pulse=1+Math.sin(G.t*3)*.03;
+   c.save();c.translate(480,95);c.scale(pulse,pulse);
+   bigText('JUST SAT DOWN',0,0,56,'#ffd23e');
+   c.restore();
+   bigText('\u2122 A MARRIAGE SIMULATOR \u2122',480,145,19,'#e8d5ff');
+   if(G.best>0)bigText('Best peace: '+Math.floor(G.best)+'s',480,205,16,'#7dff9b');
+   if(Math.sin(G.t*4)>-0.2)bigText('TAP TO BEGIN',480,300,26,'#fff');
+   bigText('Prep the house \u2192 dash to the couch \u2192 defend the peace',480,430,14,'#cfe4ff');
+   btn(380,460,200,50,'START A MARRIAGE',startGame);
+ } else {
+   drawCouch(480,470,true);
+   drawHusband(480,438,'sit');
+   drawWife(640,438,1.1,true);
+   const pulse=1+Math.sin(G.t*3)*.03;
+   c.save();c.translate(480,150);c.scale(pulse,pulse);
+   bigText('JUST SAT DOWN',0,-18,58,'#ffd23e');
+   c.restore();
+   bigText('\u2122 A MARRIAGE SIMULATOR \u2122',480,205,20,'#e8d5ff');
+   bigText('One thumb. Sixty seconds. Zero escape.',480,240,18,'#8fd3ff');
+   if(G.best>0)bigText('Best peace: '+Math.floor(G.best)+'s',480,272,16,'#7dff9b');
+   if(Math.sin(G.t*4)>-0.2)bigText('TAP TO BEGIN',480,330,26,'#fff');
+   bigText('Prep the house \u2192 dash to the couch \u2192 defend the peace',480,420,13,'#5a5470');
+   btn(380,450,200,50,'START A MARRIAGE',startGame);
+ }
+}
+function renderPrep(){
+ drawHouse();
+ const c=ctx;
+ drawCouch(800,438,true);
+ // hotspots
+ for(const hs of HOTSPOTS){
+   const done=G.prepped[hs.id];
+   c.save();
+   const r=30+Math.sin(G.t*4+hs.x)*3;
+   c.fillStyle=done?'rgba(125,255,155,.15)':'rgba(255,210,62,.12)';
+   c.beginPath();c.arc(hs.x,hs.y,r,0,TAU);c.fill();
+   c.strokeStyle=done?'#7dff9b':'#ffd23e';c.lineWidth=2.5;c.setLineDash(done?[]:[6,6]);
+   c.beginPath();c.arc(hs.x,hs.y,26,0,TAU);c.stroke();c.setLineDash([]);
+   c.font='20px system-ui';c.textAlign='center';c.textBaseline='middle';
+   const icon={charger:'\ud83d\udcf1',chips:'\ud83c\udf2a',bowl:'\ud83d\udc36',thermo:'\ud83c\udf21\ufe0f',remote:'\ud83d\udcd9',furn:'\ud83e\udde6'}[hs.id]||'\u2b50';
+   c.fillText(icon,hs.x,hs.y-4);
+   c.font='bold 11px system-ui';c.fillStyle=done?'#7dff9b':'#ffd23e';
+   c.fillText(hs.name,hs.x,hs.y+22);
+   if(done){c.font='bold 22px system-ui';c.fillStyle='#7dff9b';c.fillText('\u2713',hs.x+22,hs.y-20)}
+   c.restore();
+ }
+ drawHUD('');
+ bigText('PREP PHASE \u2014 stop it BEFORE it happens',480,64,18,'#8fd3ff');
+ // rumours ticker
+ c.fillStyle='rgba(12,9,20,.85)';rr(120,450,720,70,12);c.fill();
+ c.font='13px system-ui';c.textAlign='center';c.fillStyle='#e8d5ff';
+ G.rumours.forEach((r,i)=>c.fillText('\ud83d\udd0d '+RUMOURS[r],480,470+i*18,690));
+ const canGo=true;
+ btn(790,360,150,44,'TO THE COUCH \u2192',startDash,!canGo);
+ bigText(Math.ceil(G.prepT)+'s',865,340,20,'#ffd23e');
+ // husband at kitchen
+ drawHusband(52,432,'stand',0);
+}
+function renderDash(){
+ drawHouse();
+ const c=ctx;
+ const h=G.husband;
+ const dog={x:390+150*Math.sin(G.dashT*.8),y:405};
+ const kid={x:470+110*Math.sin(G.dashT*1.4+1),y:372+32*Math.sin(G.dashT*2.3)};
+ // gaze cone
+ c.fillStyle='rgba(255,80,120,.10)';
+ c.beginPath();c.moveTo(480,140);
+ c.lineTo(480-Math.tan(.36)*300,140+300);c.lineTo(480+Math.tan(.36)*300,140+300);c.closePath();c.fill();
+ drawWife(480,140,.8,h.seen?false:true);
+ // basket
+ c.fillStyle='#5a7a9a';rr(545,410,40,50,6);c.fill();
+ c.fillStyle='#cfe4ff';c.fillRect(549,404,32,10);
+ drawDog(dog.x,dog.y,G.dashT);
+ drawKid(kid.x,kid.y,G.dashT);
+ drawCouch(800,438,true);
+ drawHusband(h.x,h.y,'stand',G.drag?1:0);
+ if(G.drag&&G.dragPos){
+   c.strokeStyle='rgba(125,255,155,.4)';c.lineWidth=2;c.setLineDash([4,6]);
+   c.beginPath();c.arc(G.dragPos.x,G.dragPos.y,10,0,TAU);c.stroke();c.setLineDash([]);
+ }
+ drawHUD('');
+ bigText('GET TO THE COUCH',480,64,20,'#ffd23e');
+ bigText('drag him (or WASD). dodge Barnaby, the kid, the laundry, and HER GAZE.',480,88,12,'#5a5470');
+ drawFloats();
+ drawLine();
+}
+function renderSit(){
+ drawRelaxBG();
+ drawCouch(480,470,true);
+ const p=1-clamp(G.sitT/1.3,0,1);
+ drawHusband(480,470+Math.sin(p*Math.PI)*-14,'sit');
+ drawHUD('');
+ drawLine();
+}
+function renderStrike(){
+ drawRelaxBG();
+ drawCouch(480,470,false);
+ drawHusband(480,470,'sit');
+ drawWife(620,440,1.2,false);
+ drawHUD('');
+ const c=ctx;
+ c.fillStyle='rgba(10,6,14,.75)';c.fillRect(0,0,W,H);
+ bigText('\u201cFINE.\u201d',480,190,64,'#ff4d6d');
+ bigText('\u201cI\u2019LL DO IT MYSELF.\u201d',480,260,34,'#fff');
+ bigText('STRIKE '+G.strikes+' OF 3 \u2014 you lose 5s of peace',480,330,16,'#8fd3ff');
+}
+function renderRelax(){
+ drawRelaxBG();
+ drawCouch(480,470,true);
+ drawHusband(480,470,'sit');
+ if(G.line)drawWife(700,120,.75,true);
+ drawHUD(Math.ceil(G.relaxT)+'s until \u201cwe need to talk\u201d');
+ for(const t of G.tasks)drawCard(t);
+ if(G.combo>1)bigText('COMBO \u00d7'+Math.min(G.combo+1,4),480,150,20,'#ffd23e');
+ drawShieldBtns();
+ drawFloats();
+ drawLine();
+}
+function renderDayEnd(){
+ const c=ctx;
+ c.fillStyle='#0d0a14';c.fillRect(0,0,W,H);
+ drawCouch(480,480,true);
+ bigText('END OF DAY '+G.day,480,70,34,'#ffd23e');
+ bigText(rankFor(G.peaceOfDay),480,120,26,'#7dff9b');
+ bigText('Peace this day: '+Math.floor(G.peaceOfDay)+'s',480,165,18,'#fff');
+ bigText('Prevented: '+G.dayPrevented+'   Resolved: '+G.dayResolved,480,192,15,'#8fd3ff');
+ bigText('Total peace: '+Math.floor(G.totalPeace)+'s    PP: '+Math.floor(G.pp),480,220,16,'#e8d5ff');
+ // shop
+ c.fillStyle='#e8d5ff';c.font='bold 15px system-ui';c.textAlign='center';
+ c.fillText('THE COUCH EMPORIUM',480,262);
+ let y=285;
+ for(const u of UPGRADES){
+   const owned=U[u.id];
+   const maxed=owned>=u.max;
+   const canBuy=!maxed&&G.pp>=u.cost;
+   c.textAlign='left';
+   c.fillStyle=maxed?'#5a5470':'#fff';c.font='bold 14px system-ui';
+   c.fillText(u.name+(owned? ' \u00d7'+owned:''),180,y+8);
+   c.fillStyle='#8a84a0';c.font='12px system-ui';
+   c.fillText(u.desc,180,y+26);
+   btn(640,y-4,150,36,maxed?'OWNED':u.cost+' PP',function(){
+     if(!maxed&&G.pp>=u.cost){G.pp-=u.cost;U[u.id]++;sfx.ding()}
+   },!canBuy);
+   y+=52;
+ }
+ btn(380,505,200,32,'NEXT DAY \u2192',()=>{G.day++;startDay()});
+}
+function renderTalk(){
+ const c=ctx;
+ c.fillStyle='#07050c';c.fillRect(0,0,W,H);
+ c.fillStyle='#241d33';c.fillRect(0,470,W,70);
+ drawWife(170,470,1.45,true);
+ bigText('WE NEED TO TALK.',480,90,52,'#ff4d6d');
+ bigText('(it will take 45 minutes. there is no skip button.)',480,135,16,'#8fd3ff');
+ bigText('Final peace: '+Math.floor(G.totalPeace)+'s',480,195,22,'#fff');
+ bigText('Days survived: '+G.day,480,228,18,'#e8d5ff');
+ bigText('Best peace: '+Math.floor(G.best)+'s'+(Math.floor(G.totalPeace)>=Math.floor(G.best)&&G.totalPeace>0?' \u2014 NEW RECORD':''),480,258,18,'#7dff9b');
+ bigText('Cause of death: '+G.strikes+' unspoken sighs.',480,300,15,'#5a5470');
+ btn(380,360,200,50,'START A NEW MARRIAGE',startGame);
+}
+function render(){
+ btns=[];
+ if(G.mode==='title')renderTitle();
+ else if(G.mode==='prep')renderPrep();
+ else if(G.mode==='dash')renderDash();
+ else if(G.mode==='sit')renderSit();
+ else if(G.mode==='relax')renderRelax();
+ else if(G.mode==='strike')renderStrike();
+ else if(G.mode==='dayend')renderDayEnd();
+ else if(G.mode==='talk')renderTalk();
+}
+
+/* ---------------- loop ---------------- */
+let last=performance.now();
+function frame(now){
+ const dt=Math.min(.05,(now-last)/1000);last=now;
+ update(dt);
+ render();
+ requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* test hooks */
+(function(){
+  try{
+    const img=new Image();
+    img.onload=()=>G.titleArt=img;
+    img.onerror=()=>G.titleArt=null;
+    img.src='art/title.jpg';
+  }catch(e){}
+})();
+window.G=G;window.U=U;window.startGame=startGame;window.startDay=startDay;
+window.startDash=startDash;window.startRelax=startRelax;window.spawnTask=spawnTask;
+window.resolveTask=resolveTask;window.failTask=failTask;window.doStrike=doStrike;
+window.endDay=endDay;window.useShield=useShield;window.useEject=useEject;
+window.debug={setSigh:v=>G.sigh=v,setStrikes:v=>G.strikes=v,forceSpawn:t=>{G.todayPool.unshift(t);spawnTask()}};
 </script>
 </body>
 </html>
