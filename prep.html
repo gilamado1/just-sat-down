@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Prep the House — Just Sat Down</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#1a1214;overflow:hidden;font-family:Nunito,sans-serif}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{position:relative;width:100%;height:100%;max-width:560px;background:#2b1d20;overflow:hidden;box-shadow:0 0 80px #000}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+.screen{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;text-align:center;padding:24px}
+.scrim{position:absolute;inset:0;background:linear-gradient(transparent 25%,rgba(0,0,0,.88))}
+.inner{position:relative;z-index:2;width:100%}
+h1{font-family:Bangers,cursive;font-size:min(16vw,76px);color:#ffd93d;letter-spacing:2px;text-shadow:0 4px 0 #000,0 0 24px #ff8c0088;line-height:.95}
+.sub{color:#fff;font-weight:800;font-size:16px;text-shadow:0 2px 0 #000;margin:10px 0}
+.bigbtn{font-family:Bangers,cursive;font-size:28px;letter-spacing:2px;background:#ff4d6d;color:#fff;border:4px solid #000;border-radius:18px;padding:14px 36px;box-shadow:0 7px 0 #000;cursor:pointer;margin-top:12px}
+.bigbtn:active{transform:translateY(5px);box-shadow:0 2px 0 #000}
+.tiny{font-size:13px;color:#ffffff99;margin-top:10px}
+.tiny a{color:#ffe9c9}
+#hud{position:absolute;top:10px;left:12px;right:12px;z-index:5;display:none;text-align:center;pointer-events:none}
+#hud .day{font-family:Bangers,cursive;font-size:26px;color:#fff;text-shadow:0 3px 0 #000}
+#rumor{margin-top:6px;color:#ffe9c9;font-weight:800;font-size:14px;text-shadow:0 2px 0 #000;min-height:2.4em}
+#clock{font-family:Bangers,cursive;font-size:42px;color:#ffd93d;text-shadow:0 3px 0 #000}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+<canvas id="cv"></canvas>
+<div id="hud"><div id="clock">12s</div><div class="day">BEFORE SHE NOTICES</div><div id="rumor"></div></div>
+<div class="screen" id="title">
+  <div class="scrim"></div>
+  <div class="inner">
+    <h1>PREP THE<br>HOUSE</h1>
+    <div class="sub">You have seconds. Tap the glowing problems before she walks in.</div>
+    <button class="bigbtn" id="go">SHE'S COMING</button>
+    <div class="tiny">Best prevented: <span id="best">0</span></div>
+    <div class="tiny"><a href="index.html">all three games</a></div>
+  </div>
+</div>
+<div class="screen" id="over" style="display:none">
+  <div class="scrim"></div>
+  <div class="inner">
+    <h1 id="overH">SHE'S HOME</h1>
+    <div class="sub" id="overS"></div>
+    <button class="bigbtn" id="again">PREP FASTER</button>
+    <div class="tiny"><a href="index.html">all three games</a></div>
+  </div>
+</div>
+</div></div>
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const stage=document.getElementById('stage');
+let W=560,H=800;
+function resize(){W=stage.clientWidth;H=stage.clientHeight;cv.width=W*devicePixelRatio;cv.height=H*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}
+addEventListener('resize',resize);resize();
+const $ = id=>document.getElementById(id);
+$('best').textContent=localStorage.jsd_prep||'0';
+
+const SPOTS=[
+  {id:'charger',name:'PHONE CHARGER',rumor:'A cable is rattling in the kitchen.',x:.22,y:.38},
+  {id:'chips',name:'CHIPS',rumor:'One bag. She will make you pick.',x:.38,y:.32},
+  {id:'bowl',name:'DOG BOWL',rumor:'Barnaby is staring. Judgementally.',x:.18,y:.62},
+  {id:'thermo',name:'THERMOSTAT',rumor:'The thermostat is glowing. Aggressively.',x:.55,y:.28},
+  {id:'remote',name:'REMOTE',rumor:'The remote is already lost.',x:.78,y:.42},
+  {id:'lint',name:'WINDOW LINT',rumor:'That is not lint.',x:.82,y:.22}
+];
+
+let G=null, hint=0, last=performance.now();
+function start(){
+  const n=3+Math.floor(Math.random()*2);
+  const pool=SPOTS.slice().sort(()=>Math.random()-.5).slice(0,n);
+  G={t:12, spots:pool, done:{}, dead:false, hint:2.8, rumorI:0, rumorT:0};
+  $('title').style.display='none'; $('over').style.display='none'; $('hud').style.display='block';
+  rumble();
+}
+function rumble(){
+  if(!G||G.dead) return;
+  const left=G.spots.filter(s=>!G.done[s.id]);
+  $('rumor').textContent = left.length? left[G.rumorI%left.length].rumor : 'House is quiet. Suspicious.';
+}
+function end(win){
+  if(!G||G.dead) return;
+  G.dead=true; $('hud').style.display='none';
+  const n=Object.keys(G.done).length;
+  const best=Math.max(n, +(localStorage.jsd_prep||0));
+  localStorage.jsd_prep=best; $('best').textContent=best;
+  $('overH').textContent = win? 'SHE SUSPECTS NOTHING' : "SHE'S HOME";
+  $('overS').textContent = win
+    ? (n+' disasters prevented. You may sit. Briefly.')
+    : (n? n+' done. The rest she found with her eyes.':'You touched nothing. Brave.');
+  $('over').style.display='flex';
+}
+function pos(s){return {x:s.x*W, y:s.y*H}}
+cv.addEventListener('pointerdown', e=>{
+  if(!G||G.dead) return;
+  const r=cv.getBoundingClientRect();
+  const x=(e.clientX-r.left)*W/r.width, y=(e.clientY-r.top)*H/r.height;
+  let hit=false;
+  for(const s of G.spots){
+    if(G.done[s.id]) continue;
+    const p=pos(s);
+    if(Math.hypot(x-p.x,y-p.y)<42){ G.done[s.id]=true; hit=true; rumble(); }
+  }
+  if(!hit) G.hint=1.6;
+  if(G.spots.every(s=>G.done[s.id])) end(true);
+});
+$('go').onclick=start; $('again').onclick=start;
+
+function loop(now){
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+  if(G&&!G.dead){
+    G.t-=dt; G.hint-=dt; G.rumorT+=dt;
+    if(G.rumorT>2.2){ G.rumorT=0; G.rumorI++; rumble(); }
+    $('clock').textContent=Math.max(0,G.t).toFixed(1)+'s';
+    if(G.t<=0) end(false);
+  }
+  draw(now/1000);
+  requestAnimationFrame(loop);
+}
+function draw(t){
+  ctx.fillStyle='#3d2c22'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#7a5c3e'; ctx.fillRect(0,H*.62,W,H*.38);
+  ctx.fillStyle='#8f3b2f';
+  ctx.beginPath(); ctx.roundRect(W*.28,H*.68,W*.5,90,16); ctx.fill();
+  ctx.fillStyle='#2a1c12'; ctx.fillRect(W*.7,H*.14,W*.22,H*.46);
+  if(!G) return;
+  for(const s of G.spots){
+    const p=pos(s), done=!!G.done[s.id];
+    ctx.save();
+    if(!done){
+      ctx.globalAlpha=.35+.25*Math.sin(t*6);
+      ctx.fillStyle='#ffd93d'; ctx.beginPath(); ctx.arc(p.x,p.y,38,0,7); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    ctx.fillStyle=done?'#6bff8f':'#ffd93d';
+    ctx.beginPath(); ctx.arc(p.x,p.y,16,0,7); ctx.fill();
+    ctx.strokeStyle='#000'; ctx.lineWidth=3; ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font='13px Nunito'; ctx.textAlign='center'; ctx.font='800 12px Nunito';
+    ctx.fillStyle='#ffe9c9'; ctx.fillText(s.name, p.x, p.y+32);
+    ctx.restore();
+  }
+  if(G.hint>0 && !G.dead){
+    ctx.globalAlpha=Math.min(1,G.hint);
+    ctx.fillStyle='#fff'; ctx.font='22px Bangers'; ctx.textAlign='center';
+    ctx.fillText('TAP THE GLOWING THING', W/2, H*.18);
+    ctx.globalAlpha=1;
+  }
+}
+requestAnimationFrame(loop);
+</script>
+</body></html>

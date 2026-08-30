@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scale=no,user-scalable=no">
+<title>Dash to the Couch — Just Sat Down</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#1a1214;overflow:hidden;font-family:Nunito,sans-serif}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{position:relative;width:100%;height:100%;max-width:560px;background:#2b1d20;overflow:hidden}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.screen{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;text-align:center;padding:24px}
+.scrim{position:absolute;inset:0;background:linear-gradient(transparent 25%,rgba(0,0,0,.88))}
+.inner{position:relative;z-index:2;width:100%}
+h1{font-family:Bangers,cursive;font-size:min(15vw,70px);color:#ffd93d;letter-spacing:2px;text-shadow:0 4px 0 #000;line-height:.95}
+.sub{color:#fff;font-weight:800;font-size:16px;text-shadow:0 2px 0 #000;margin:10px 0}
+.bigbtn{font-family:Bangers,cursive;font-size:28px;background:#ff4d6d;color:#fff;border:4px solid #000;border-radius:18px;padding:14px 36px;box-shadow:0 7px 0 #000;cursor:pointer;margin-top:12px}
+.tiny{font-size:13px;color:#ffffff99;margin-top:10px}
+.tiny a{color:#ffe9c9}
+#hud{position:absolute;top:12px;left:12px;right:12px;z-index:5;display:none;text-align:center;pointer-events:none;font-family:Bangers,cursive;font-size:28px;color:#fff;text-shadow:0 3px 0 #000}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+<canvas id="cv"></canvas>
+<div id="hud">GET TO THE COUCH</div>
+<div class="screen" id="title">
+  <div class="scrim"></div>
+  <div class="inner">
+    <h1>DASH TO<br>THE COUCH</h1>
+    <div class="sub">Drag him. Dodge the dog. Do not meet her eyes.</div>
+    <button class="bigbtn" id="go">I CAN SEE IT</button>
+    <div class="tiny">Best sit: <span id="best">—</span></div>
+    <div class="tiny"><a href="index.html">all three games</a></div>
+  </div>
+</div>
+<div class="screen" id="over" style="display:none">
+  <div class="scrim"></div>
+  <div class="inner">
+    <h1 id="overH">SAT DOWN</h1>
+    <div class="sub" id="overS"></div>
+    <button class="bigbtn" id="again">AGAIN</button>
+    <div class="tiny"><a href="index.html">all three games</a></div>
+  </div>
+</div>
+</div></div>
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const stage=document.getElementById('stage');
+let W=560,H=800;
+function resize(){W=stage.clientWidth;H=stage.clientHeight;cv.width=W*devicePixelRatio;cv.height=H*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}
+addEventListener('resize',resize);resize();
+const $=id=>document.getElementById(id);
+$('best').textContent=(localStorage.jsd_dash||'—');
+const keys=new Set();
+addEventListener('keydown',e=>{keys.add(e.key.toLowerCase()); if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase())||e.code==='Space') e.preventDefault()});
+addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+
+let G=null, last=performance.now(), drag=null;
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function start(){
+  G={t:0, x:.16, y:.72, stop:0, seen:false, dead:false, won:false, hint:3, sitT:0};
+  $('title').style.display='none'; $('over').style.display='none'; $('hud').style.display='block';
+}
+function finish(win, line){
+  if(!G||G.dead) return;
+  G.dead=true; G.won=win; $('hud').style.display='none';
+  const sec=G.t.toFixed(1)+'s';
+  if(win){
+    const best=localStorage.jsd_dash; 
+    if(!best || parseFloat(sec)<parseFloat(best)) localStorage.jsd_dash=sec;
+    $('best').textContent=localStorage.jsd_dash;
+  }
+  $('overH').textContent=win? 'SAT DOWN':'SHE SAW YOU';
+  $('overS').textContent=line+' · '+sec;
+  $('over').style.display='flex';
+}
+function ptr(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height}}
+cv.addEventListener('pointerdown',e=>{if(!G||G.dead)return; drag=ptr(e); cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',e=>{if(drag) drag=ptr(e)});
+addEventListener('pointerup',()=>drag=null);
+addEventListener('pointercancel',()=>drag=null);
+$('go').onclick=start; $('again').onclick=start;
+
+function loop(now){
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+  if(G&&!G.dead){
+    G.t+=dt; G.hint-=dt; if(G.stop>0) G.stop-=dt;
+    let ax=0,ay=0;
+    if(drag && G.stop<=0){ ax=drag.x-G.x; ay=drag.y-G.y; }
+    if(keys.has('a')||keys.has('arrowleft')) ax-=1;
+    if(keys.has('d')||keys.has('arrowright')) ax+=1;
+    if(keys.has('w')||keys.has('arrowup')) ay-=1;
+    if(keys.has('s')||keys.has('arrowdown')) ay+=1;
+    const L=Math.hypot(ax,ay);
+    if(L>0.04 && G.stop<=0){ G.x=clamp(G.x+ax/L*dt*.55, .06,.94); G.y=clamp(G.y+ay/L*dt*.55, .28,.88); G.hint=0; }
+    const dog={x:.48+.22*Math.sin(G.t*1.3), y:.70};
+    if(Math.hypot(G.x-dog.x,G.y-dog.y)<.07){ G.stop=.28; G.x=clamp(G.x+(G.x-dog.x), .06,.94); }
+    const laundry={x:.55,y:.78};
+    if(Math.hypot(G.x-laundry.x,G.y-laundry.y)<.065 && G.stop<=0){ G.stop=.4; G.y-=.06; }
+    const wife={x:.78,y:.22};
+    if(!G.seen){
+      const dx=G.x-wife.x, dy=G.y-wife.y, d=Math.hypot(dx,dy);
+      if(d<.42 && Math.abs(Math.atan2(dx,dy))<.28){ G.seen=true; finish(false,'She looked up. No reason given.'); }
+    }
+    if(Math.hypot(G.x-.72,G.y-.62)<.08){ G.sitT+=dt; if(G.sitT>.25) finish(true,'Ooh. Finally.'); }
+    if(G.t>28) finish(false,'You wandered. The couch waited.');
+  }
+  draw(now/1000);
+  requestAnimationFrame(loop);
+}
+function draw(t){
+  ctx.fillStyle='#3d2c22'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#7a5c3e'; ctx.fillRect(0,H*.58,W,H*.42);
+  // couch target
+  ctx.fillStyle='#8f3b2f';
+  ctx.beginPath(); ctx.roundRect(W*.52,H*.54,W*.36,H*.16,14); ctx.fill();
+  ctx.fillStyle='#ffd93d'; ctx.font='16px Bangers'; ctx.textAlign='center';
+  ctx.fillText('COUCH', W*.70, H*.62);
+  // doorway + wife
+  ctx.fillStyle='#2a1c12'; ctx.fillRect(W*.70,H*.08,W*.22,H*.28);
+  ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(W*.80,H*.20,14,0,7); ctx.fill();
+  ctx.fillStyle='#1a3a1a'; ctx.beginPath(); ctx.moveTo(W*.80-16,H*.34); ctx.lineTo(W*.80,H*.18); ctx.lineTo(W*.80+16,H*.34); ctx.fill();
+  // laundry
+  ctx.fillStyle='#c4b7a0'; ctx.beginPath(); ctx.roundRect(W*.48,H*.74,W*.14,H*.08,8); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='11px Nunito'; ctx.fillText('LAUNDRY', W*.55, H*.79);
+  if(!G) return;
+  const dogx=(.48+.22*Math.sin(G.t*1.3))*W, dogy=.70*H;
+  ctx.fillStyle='#6b3e22'; ctx.beginPath(); ctx.ellipse(dogx,dogy,22,14,0,0,7); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='11px Nunito'; ctx.fillText('BARNABY', dogx, dogy+24);
+  // husband
+  const hx=G.x*W, hy=G.y*H;
+  ctx.fillStyle='#e8863a'; ctx.beginPath(); ctx.ellipse(hx,hy+10,18,16,0,0,7); ctx.fill();
+  ctx.fillStyle='#f2b98a'; ctx.beginPath(); ctx.arc(hx,hy-8,14,0,7); ctx.fill();
+  if(G.hint>0 && !G.dead){
+    ctx.globalAlpha=Math.min(1,G.hint);
+    ctx.fillStyle='#fff'; ctx.font='24px Bangers'; ctx.textAlign='center';
+    ctx.fillText('DRAG HIM TO THE COUCH', W/2, H*.16);
+    ctx.font='14px Nunito'; ctx.fillText('or WASD. Avoid the dog. Do not look at her.', W/2, H*.20);
+    ctx.globalAlpha=1;
+  }
+}
+requestAnimationFrame(loop);
+</script>
+</body></html>
